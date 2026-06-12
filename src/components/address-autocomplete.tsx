@@ -61,8 +61,9 @@ export function AddressAutocomplete({ value, onChange, placeholder }: AddressAut
 
     autocompleteRef.current.addListener("place_changed", () => {
       const place = autocompleteRef.current!.getPlace();
-      if (place.formatted_address) {
-        onChange(place.formatted_address);
+      const address = place.formatted_address || (place as unknown as { name?: string }).name || "";
+      if (address) {
+        onChange(address);
         setShowSuggestions(false);
       }
     });
