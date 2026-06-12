@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import path from "path";
 
 function createPrismaClient() {
@@ -8,7 +8,7 @@ function createPrismaClient() {
   const absolutePath = path.isAbsolute(relativePath)
     ? relativePath
     : path.join(process.cwd(), relativePath);
-  const adapter = new PrismaLibSql({ url: `file:${absolutePath}` });
+  const adapter = new PrismaBetterSqlite3({ url: `file:${absolutePath}` });
   return new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
 }
 
