@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_CREW_MEMBERS, DEFAULT_JOB_TYPES } from "@/lib/utils";
+import { AddressAutocomplete } from "./address-autocomplete";
 
 interface JobFormProps {
   initialData?: {
@@ -139,11 +140,9 @@ export function JobForm({ initialData, mode }: JobFormProps) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-        <input
+        <AddressAutocomplete
           value={form.address}
-          onChange={(e) => set("address", e.target.value)}
-          placeholder="123 Industrial Rd, City, Province"
-          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          onChange={(val) => set("address", val)}
         />
       </div>
 
