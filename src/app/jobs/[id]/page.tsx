@@ -61,10 +61,15 @@ export default async function JobDetailPage({
             </div>
           </div>
           {job.address && (
-            <div className="px-4 py-3 flex items-start gap-3">
-              <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
-              <span>{job.address}</span>
-            </div>
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(job.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-3 flex items-start gap-3 hover:bg-green-50 transition-colors group"
+            >
+              <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-green-600" />
+              <span className="group-hover:text-green-700 group-hover:underline">{job.address}</span>
+            </a>
           )}
           {job.jobLead && (
             <div className="px-4 py-3 flex items-start gap-3">
