@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Calendar, List, Users, LogOut, Plus } from "lucide-react";
+import { Calendar, List, Users, LogOut, Plus, RefreshCw } from "lucide-react";
 
 interface NavProps {
   role: "office" | "crew";
@@ -48,6 +48,15 @@ export function Nav({ role }: NavProps) {
             ))}
           </div>
           <div className="flex items-center gap-2">
+            {role === "office" && (
+              <Link
+                href="/import"
+                className="flex items-center gap-1.5 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <RefreshCw size={16} />
+                <span className="hidden sm:inline">Sync</span>
+              </Link>
+            )}
             {role === "office" && (
               <Link
                 href="/jobs/new"

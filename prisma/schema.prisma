@@ -21,7 +21,8 @@ model Job {
   startTime     String?
   description   String   @default("")
   colorTag      String   @default("#3B82F6")
-  legacyJobUrl  String?
+  legacyJobUrl    String?
+  googleEventId   String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   photos        Photo[]
