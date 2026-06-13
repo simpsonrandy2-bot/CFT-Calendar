@@ -1,36 +1,42 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { getIronSession } from "iron-session";
+import { SessionData, sessionOptions } from "@/lib/session";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+async function loginAction(formData: FormData) {
+  "use server";
+  const role = formData.get("role") as string;
+  const password = formData.get("password") as string;
 
-export default function LoginPage() {
-  const [role, setRole] = useState<"office" | "crew" | null>(null);
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const officePassword = process.env.OFFICE_PASSWORD || "office123";
+  const crewPassword = process.env.CREW_PASSWORD || "crew123";
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!role) return;
-    setLoading(true);
-    setError("");
+  let valid = false;
+  if (role === "office" && password === officePassword) valid = true;
+  if (role === "crew" && password === crewPassword) valid = true;
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role, password }),
-    });
+  if (!valid) redirect("/login?role=" + role + "&error=1");
 
-    if (res.ok) {
-      router.push("/calendar");
-      router.refresh();
-    } else {
-      const data = await res.json();
-      setError(data.error || "Invalid password");
-      setLoading(false);
-    }
-  }
+  const cookieStore = await cookies();
+  const session = await getIronSession<SessionData>(cookieStore, sessionOptions);
+  session.isLoggedIn = true;
+  session.role = role as "office" | "crew";
+  await session.save();
+  redirect("/calendar");
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; error?: string }>;
+}) {
+  const session = await getSession();
+  if (session.isLoggedIn) redirect("/calendar");
+
+  const params = await searchParams;
+  const selectedRole = params.role || "";
+  const hasError = params.error === "1";
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
@@ -40,55 +46,43 @@ export default function LoginPage() {
           <p className="text-gray-500 mt-1">Concrete Floor Tech</p>
         </div>
 
-        {!role ? (
+        {!selectedRole ? (
           <div className="space-y-3">
             <p className="text-center text-sm font-medium text-gray-600 mb-4">Select your role</p>
-            <button
-              onClick={() => setRole("office")}
-              onTouchEnd={(e) => { e.preventDefault(); setRole("office"); }}
-              className="w-full py-6 bg-blue-600 text-white rounded-xl text-xl font-semibold active:bg-blue-800 transition-colors cursor-pointer select-none"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            <a
+              href="/login?role=office"
+              className="block w-full py-6 bg-blue-600 text-white rounded-xl text-xl font-semibold text-center"
             >
               Office
-            </button>
-            <button
-              onClick={() => setRole("crew")}
-              onTouchEnd={(e) => { e.preventDefault(); setRole("crew"); }}
-              className="w-full py-6 bg-orange-500 text-white rounded-xl text-xl font-semibold active:bg-orange-700 transition-colors cursor-pointer select-none"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            </a>
+            <a
+              href="/login?role=crew"
+              className="block w-full py-6 bg-orange-500 text-white rounded-xl text-xl font-semibold text-center"
             >
               Field Crew
-            </button>
+            </a>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={loginAction} className="space-y-4">
+            <input type="hidden" name="role" value={selectedRole} />
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600">
-                Logging in as: <span className="font-bold capitalize">{role}</span>
+                Logging in as: <span className="font-bold capitalize">{selectedRole}</span>
               </span>
-              <button
-                type="button"
-                onClick={() => { setRole(null); setPassword(""); setError(""); }}
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Change
-              </button>
+              <a href="/login" className="text-sm text-blue-600 underline">Change</a>
             </div>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
               placeholder="Enter password"
               className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:outline-none"
-              autoFocus
             />
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {hasError && <p className="text-red-500 text-sm">Incorrect password</p>}
             <button
               type="submit"
-              disabled={loading || !password}
-              className="w-full py-4 bg-gray-900 text-white rounded-xl text-lg font-semibold hover:bg-gray-800 disabled:opacity-50 transition-colors"
+              className="w-full py-4 bg-gray-900 text-white rounded-xl text-lg font-semibold"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              Sign In
             </button>
           </form>
         )}
