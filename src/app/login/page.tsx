@@ -45,13 +45,17 @@ export default function LoginPage() {
             <p className="text-center text-sm font-medium text-gray-600 mb-4">Select your role</p>
             <button
               onClick={() => setRole("office")}
-              className="w-full py-4 bg-blue-600 text-white rounded-xl text-lg font-semibold hover:bg-blue-700 active:bg-blue-800 transition-colors"
+              onTouchEnd={(e) => { e.preventDefault(); setRole("office"); }}
+              className="w-full py-6 bg-blue-600 text-white rounded-xl text-xl font-semibold active:bg-blue-800 transition-colors cursor-pointer select-none"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
             >
               Office
             </button>
             <button
               onClick={() => setRole("crew")}
-              className="w-full py-4 bg-orange-500 text-white rounded-xl text-lg font-semibold hover:bg-orange-600 active:bg-orange-700 transition-colors"
+              onTouchEnd={(e) => { e.preventDefault(); setRole("crew"); }}
+              className="w-full py-6 bg-orange-500 text-white rounded-xl text-xl font-semibold active:bg-orange-700 transition-colors cursor-pointer select-none"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
             >
               Field Crew
             </button>
