@@ -1,6 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
-const prisma = new PrismaClient();
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
 
 async function main() {
   const crew = ["Dan", "Randy", "Jon", "Ken", "Cody", "Mike", "Tyler"];
@@ -11,27 +15,6 @@ async function main() {
       create: { name },
     });
   }
-
-  await prisma.job.upsert({
-    where: { id: "sample-job-1" },
-    update: {},
-    create: {
-      id: "sample-job-1",
-      jobNumber: "25-674",
-      title: 'Precast 55,650 sf 1/2" LR 2500',
-      customer: "Stubbe's Precast Commercial Ltd.",
-      jobType: "Precast",
-      address: "123 Industrial Rd, Hamilton, ON",
-      jobLead: "Dan",
-      siteContact: "Bob Smith 905-555-1234",
-      startDate: new Date("2026-06-15"),
-      endDate: new Date("2026-06-17"),
-      startTime: "06:00",
-      description: "Main floor: 40,000 sf @ 1/2\"\nMezzanine: 15,650 sf @ 1/2\"\n\nSpecial instructions: Use LR 2500 mix only.",
-      colorTag: "#3B82F6",
-    },
-  });
-
   console.log("Seed completed");
 }
 
