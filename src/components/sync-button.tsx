@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Database } from "lucide-react";
 
 export function SyncButton() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [result, setResult] = useState<{ created: number; updated: number; skipped: number } | null>(null);
   const [error, setError] = useState("");
+  const [seedStatus, setSeedStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [seedMsg, setSeedMsg] = useState("");
 
   async function handleSync() {
     setStatus("loading");
@@ -25,6 +27,25 @@ export function SyncButton() {
     } catch {
       setError("Network error — check your connection");
       setStatus("error");
+    }
+  }
+
+  async function handleSeed() {
+    setSeedStatus("loading");
+    setSeedMsg("");
+    try {
+      const res = await fetch("/api/seed", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setSeedMsg(data.error || "Failed");
+        setSeedStatus("error");
+      } else {
+        setSeedMsg(`Loaded ${data.jobs} jobs and ${data.crewOffs} crew-off entries`);
+        setSeedStatus("success");
+      }
+    } catch {
+      setSeedMsg("Network error");
+      setSeedStatus("error");
     }
   }
 
@@ -56,6 +77,36 @@ export function SyncButton() {
       {status === "error" && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      <hr className="my-4 border-gray-100" />
+
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Load Google Calendar Jobs</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Load the 46 jobs from Google Calendar into the database. Safe to run multiple times.
+          </p>
+        </div>
+        <button
+          onClick={handleSeed}
+          disabled={seedStatus === "loading"}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:opacity-50 transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          <Database size={15} />
+          {seedStatus === "loading" ? "Loading..." : "Load Jobs"}
+        </button>
+      </div>
+
+      {seedStatus === "success" && (
+        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+          ✓ {seedMsg}
+        </div>
+      )}
+      {seedStatus === "error" && (
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {seedMsg}
         </div>
       )}
     </div>

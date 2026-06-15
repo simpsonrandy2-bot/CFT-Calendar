@@ -330,8 +330,9 @@ export function CalendarClient() {
               return (
                 <div
                   key={day.toISOString()}
+                  onClick={() => { setCurrentDate(day); setViewMode("week"); }}
                   className={cn(
-                    "min-h-20 p-1 border-b border-r border-gray-100",
+                    "min-h-20 p-1 border-b border-r border-gray-100 cursor-pointer hover:bg-blue-50/30 transition-colors",
                     !isCurrentMonth && "bg-gray-50/50",
                     isSameDay(day, today) && "bg-blue-50/50"
                   )}
