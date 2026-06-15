@@ -21,6 +21,7 @@ interface Job {
   colorTag: string;
   jobType: string;
   jobNumber: string;
+  address: string;
 }
 
 interface CrewOff {
