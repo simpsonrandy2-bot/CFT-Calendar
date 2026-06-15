@@ -37,7 +37,7 @@ interface DayWeather {
   weatherCode: number;
 }
 
-type ViewMode = "week" | "month";
+type ViewMode = "week" | "month" | "day";
 
 // Open-Meteo weather code → emoji + label
 function weatherEmoji(code: number): string {
@@ -121,6 +121,9 @@ export function CalendarClient() {
     if (viewMode === "week") {
       start = startOfWeek(currentDate, { weekStartsOn: 0 });
       end = endOfWeek(currentDate, { weekStartsOn: 0 });
+    } else if (viewMode === "day") {
+      start = currentDate;
+      end = currentDate;
     } else {
       start = startOfMonth(currentDate);
       end = endOfMonth(currentDate);
@@ -132,6 +135,8 @@ export function CalendarClient() {
   function navigate(direction: "prev" | "next") {
     if (viewMode === "week") {
       setCurrentDate(direction === "prev" ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
+    } else if (viewMode === "day") {
+      setCurrentDate(direction === "prev" ? addDays(currentDate, -1) : addDays(currentDate, 1));
     } else {
       setCurrentDate(direction === "prev" ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
     }
@@ -178,6 +183,8 @@ export function CalendarClient() {
 
   const headerLabel = viewMode === "week"
     ? `${format(weekStart, "MMM d")} – ${format(addDays(weekStart, 6), "MMM d, yyyy")}`
+    : viewMode === "day"
+    ? format(currentDate, "EEEE, MMM d, yyyy")
     : format(currentDate, "MMMM yyyy");
 
   if (!mounted) {
@@ -230,6 +237,14 @@ export function CalendarClient() {
             <span className="hidden sm:inline">Month</span>
           </button>
         </div>
+        {viewMode === "day" && (
+          <button
+            onClick={() => setViewMode("month")}
+            className="ml-2 text-sm text-gray-500 hover:text-gray-900 underline"
+          >
+            ← Back
+          </button>
+        )}
       </div>
 
       {loading && (
@@ -330,7 +345,7 @@ export function CalendarClient() {
               return (
                 <div
                   key={day.toISOString()}
-                  onClick={() => { setCurrentDate(day); setViewMode("week"); }}
+                  onClick={() => { setCurrentDate(day); setViewMode("day"); }}
                   className={cn(
                     "min-h-20 p-1 border-b border-r border-gray-100 cursor-pointer hover:bg-blue-50/30 transition-colors",
                     !isCurrentMonth && "bg-gray-50/50",
@@ -372,6 +387,55 @@ export function CalendarClient() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Day View */}
+      {viewMode === "day" && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-100">
+            {(() => {
+              const w = getWeatherForDay(currentDate);
+              const dayCrewOff = getCrewOffForDay(currentDate);
+              return (
+                <>
+                  {w && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                      <span>{weatherEmoji(w.weatherCode)}</span>
+                      <span>{w.tempMax}° / {w.tempMin}°</span>
+                    </div>
+                  )}
+                  {dayCrewOff.length > 0 && (
+                    <div className="text-sm bg-amber-100 text-amber-700 rounded px-2 py-1 mb-3">
+                      Off: {dayCrewOff.map(co => co.crewName).join(", ")}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+          <div className="divide-y divide-gray-100">
+            {getJobsForDay(currentDate).length === 0 ? (
+              <div className="p-8 text-center text-gray-400 text-sm">No jobs scheduled</div>
+            ) : (
+              getJobsForDay(currentDate).map((job) => (
+                <Link
+                  key={job.id}
+                  href={`/jobs/${job.id}`}
+                  className="flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="w-3 h-3 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: job.colorTag }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 text-sm">{job.title}</div>
+                    {job.startTime && <div className="text-xs text-gray-500 mt-0.5">{job.startTime}</div>}
+                    {job.address && <div className="text-xs text-gray-500 mt-0.5">{job.address}</div>}
+                    {job.jobLead && <div className="text-xs text-gray-400 mt-0.5">Lead: {job.jobLead}</div>}
+                  </div>
+                  <ChevronRight size={16} className="text-gray-300 flex-shrink-0 mt-0.5" />
+                </Link>
+              ))
+            )}
           </div>
         </div>
       )}
