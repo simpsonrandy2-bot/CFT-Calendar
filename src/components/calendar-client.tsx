@@ -59,7 +59,8 @@ const DEFAULT_LAT = 43.2557;
 const DEFAULT_LON = -79.8711;
 
 export function CalendarClient() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
+  const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [crewOffs, setCrewOffs] = useState<CrewOff[]>([]);
@@ -111,6 +112,11 @@ export function CalendarClient() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     let start: Date, end: Date;
     if (viewMode === "week") {
       start = startOfWeek(currentDate, { weekStartsOn: 0 });
@@ -121,7 +127,7 @@ export function CalendarClient() {
     }
     fetchData(start, end);
     fetchWeather(start, end);
-  }, [currentDate, viewMode, fetchData, fetchWeather]);
+  }, [currentDate, viewMode, fetchData, fetchWeather, mounted]);
 
   function navigate(direction: "prev" | "next") {
     if (viewMode === "week") {
@@ -173,6 +179,10 @@ export function CalendarClient() {
   const headerLabel = viewMode === "week"
     ? `${format(weekStart, "MMM d")} – ${format(addDays(weekStart, 6), "MMM d, yyyy")}`
     : format(currentDate, "MMMM yyyy");
+
+  if (!mounted) {
+    return <div className="max-w-7xl mx-auto py-8 text-center text-gray-400 text-sm">Loading calendar...</div>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
