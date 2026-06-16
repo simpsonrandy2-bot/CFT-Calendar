@@ -261,8 +261,9 @@ export function CalendarClient() {
               return (
                 <div
                   key={day.toISOString()}
+                  onClick={() => { setCurrentDate(day); setViewMode("day"); }}
                   className={cn(
-                    "px-1 py-2 text-center",
+                    "px-1 py-2 text-center cursor-pointer hover:bg-blue-50/50 transition-colors",
                     isSameDay(day, today) && "bg-blue-50"
                   )}
                 >
