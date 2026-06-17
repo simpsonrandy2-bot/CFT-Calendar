@@ -44,10 +44,13 @@ export async function POST(req: Request) {
     const endRaw = event.end?.dateTime || event.end?.date;
     if (!startRaw) { skipped++; continue; }
 
+    const isAllDay = !event.start?.dateTime;
     const startDate = new Date(startRaw);
     let endDate = endRaw ? new Date(endRaw) : startDate;
-    if (!event.start?.dateTime && event.end?.date) {
+    if (isAllDay && event.end?.date) {
+      // Google end date is exclusive; subtract 1 day, then set to end-of-day UTC so timezone offsets don't exclude the event
       endDate = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+      endDate.setUTCHours(23, 59, 59, 999);
     }
 
     const startTime = event.start?.dateTime
