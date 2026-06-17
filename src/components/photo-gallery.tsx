@@ -43,6 +43,7 @@ function compressImage(file: File, maxPx = 1280, quality = 0.75): Promise<Blob> 
 export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoGalleryProps) {
   const [photos, setPhotos] = useState(initialPhotos);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [uploadError, setUploadError] = useState("");
   const [lightbox, setLightbox] = useState<Photo | null>(null);
   const [caption, setCaption] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -52,6 +53,7 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
     if (!files.length) return;
 
     setUploadingCount(files.length);
+    setUploadError("");
 
     for (const file of files) {
       try {
@@ -61,14 +63,14 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
         formData.append("caption", caption);
 
         const res = await fetch(`/api/jobs/${jobId}/photos`, { method: "POST", body: formData });
-        if (res.ok) {
-          const photo = await res.json();
-          if (photo?.url) {
-            setPhotos((prev) => [photo, ...prev]);
-          }
+        const data = await res.json();
+        if (res.ok && data?.url) {
+          setPhotos((prev) => [data, ...prev]);
+        } else {
+          setUploadError(`Upload failed: ${data?.error || res.status}`);
         }
       } catch (err) {
-        console.error("Photo upload error:", err);
+        setUploadError(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
       }
       setUploadingCount((n) => Math.max(0, n - 1));
     }
@@ -105,6 +107,9 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+        {uploadError && (
+          <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{uploadError}</div>
+        )}
         <label
           htmlFor="photo-upload"
           className={`flex items-center justify-center gap-2 w-full py-4 rounded-xl text-white font-semibold cursor-pointer transition-colors ${
