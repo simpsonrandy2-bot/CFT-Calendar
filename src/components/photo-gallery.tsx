@@ -62,8 +62,8 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
         try {
           uploadFile = await compressImage(file);
           uploadName = file.name.replace(/\.[^.]+$/, ".jpg");
-        } catch {
-          // Compression failed (e.g. HEIC from camera) — upload original
+        } catch (compErr) {
+          setUploadError(`Compress error: ${compErr instanceof Error ? compErr.message : String(compErr)}`);
           uploadFile = file;
           uploadName = file.name;
         }
@@ -72,14 +72,16 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
         formData.append("caption", caption);
 
         const res = await fetch(`/api/jobs/${jobId}/photos`, { method: "POST", body: formData });
-        const data = await res.json();
+        const text = await res.text();
+        let data: Record<string, string> = {};
+        try { data = JSON.parse(text); } catch { setUploadError(`Server response (${res.status}): ${text.slice(0, 200)}`); continue; }
         if (res.ok && data?.url) {
-          setPhotos((prev) => [data, ...prev]);
+          setPhotos((prev) => [{ ...data, uploadedAt: data.uploadedAt || new Date().toISOString(), uploadedBy: data.uploadedBy || "" } as Photo, ...prev]);
         } else {
-          setUploadError(`Upload failed: ${data?.error || res.status}`);
+          setUploadError(`Upload failed (${res.status}): ${data?.error || text.slice(0, 200)}`);
         }
       } catch (err) {
-        setUploadError(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+        setUploadError(`Fetch error: ${err instanceof Error ? err.message : String(err)}`);
       }
       setUploadingCount((n) => Math.max(0, n - 1));
     }
