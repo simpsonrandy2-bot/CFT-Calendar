@@ -70,6 +70,8 @@ export function CalendarClient() {
   const [weather, setWeather] = useState<Record<string, DayWeather>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  const [slideKey, setSlideKey] = useState(0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
@@ -203,6 +205,8 @@ export function CalendarClient() {
   }
 
   function navigate(direction: "prev" | "next") {
+    setSlideDir(direction === "next" ? "left" : "right");
+    setSlideKey((k) => k + 1);
     if (viewMode === "week") {
       setCurrentDate(direction === "prev" ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
     } else if (viewMode === "day") {
@@ -367,9 +371,16 @@ export function CalendarClient() {
         <div className="text-center py-4 text-gray-400 text-sm animate-pulse">Loading...</div>
       )}
 
+      <style>{`
+        @keyframes slideInLeft { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInRight { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .slide-left { animation: slideInLeft 0.22s ease-out; }
+        .slide-right { animation: slideInRight 0.22s ease-out; }
+      `}</style>
+
       {/* Week View */}
       {!searchQuery && viewMode === "week" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {weekDays.map((day) => {
@@ -446,7 +457,7 @@ export function CalendarClient() {
 
       {/* Month View */}
       {!searchQuery && viewMode === "month" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
@@ -512,7 +523,7 @@ export function CalendarClient() {
 
       {/* Day View */}
       {!searchQuery && viewMode === "day" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="p-4 border-b border-gray-100">
             {(() => {
