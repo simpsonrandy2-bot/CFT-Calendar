@@ -40,7 +40,8 @@ export function SyncButton() {
     const tokenClient = (window as GIS).google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      callback: async (resp) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      callback: async (resp: any) => {
         if (!resp.access_token) {
           setError(resp.error || "Google sign-in cancelled");
           setStatus("error");
