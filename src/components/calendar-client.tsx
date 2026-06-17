@@ -74,6 +74,8 @@ export function CalendarClient() {
   const [slideKey, setSlideKey] = useState(0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
+  const isDragging = useRef(false);
+  const slideContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async (start: Date, end: Date) => {
     setLoading(true);
@@ -121,6 +123,15 @@ export function CalendarClient() {
 
   useEffect(() => {
     setMounted(true);
+    // Need non-passive touchmove to call preventDefault and block page scroll during horizontal swipe
+    const el = slideContainerRef.current?.parentElement;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
   }, []);
 
   useEffect(() => {
@@ -195,13 +206,47 @@ export function CalendarClient() {
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (!isDragging.current) {
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
+      isDragging.current = true;
+    }
+    e.preventDefault();
+    const el = slideContainerRef.current;
+    if (!el) return;
+    // Rubber-band resistance at edges
+    const resistance = 0.4;
+    el.style.transition = "none";
+    el.style.transform = `translateX(${dx * resistance}px)`;
   }
 
   function handleTouchEnd(e: React.TouchEvent) {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    const dy = e.changedTouches[0].clientY - touchStartY.current;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
-    navigate(dx < 0 ? "next" : "prev");
+    const el = slideContainerRef.current;
+    if (!isDragging.current || !el) return;
+    isDragging.current = false;
+
+    if (Math.abs(dx) > 60) {
+      const dir = dx < 0 ? "next" : "prev";
+      // Slide out
+      el.style.transition = "transform 0.18s ease-in";
+      el.style.transform = `translateX(${dx < 0 ? "-100%" : "100%"})`;
+      setTimeout(() => {
+        navigate(dir);
+        // navigate() updates slideKey which remounts the element with a CSS slide-in animation
+        if (el) { el.style.transition = "none"; el.style.transform = ""; }
+      }, 180);
+    } else {
+      // Spring back
+      el.style.transition = "transform 0.25s ease-out";
+      el.style.transform = "translateX(0)";
+    }
   }
 
   function navigate(direction: "prev" | "next") {
@@ -266,7 +311,11 @@ export function CalendarClient() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-1">
           <button
@@ -372,16 +421,17 @@ export function CalendarClient() {
       )}
 
       <style>{`
-        @keyframes slideInLeft { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideInRight { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .slide-left { animation: slideInLeft 0.22s ease-out; }
-        .slide-right { animation: slideInRight 0.22s ease-out; }
+        @keyframes slideInLeft { from { transform: translateX(60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInRight { from { transform: translateX(-60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .slide-left { animation: slideInLeft 0.2s ease-out; }
+        .slide-right { animation: slideInRight 0.2s ease-out; }
       `}</style>
+
+      <div ref={slideContainerRef}>
 
       {/* Week View */}
       {!searchQuery && viewMode === "week" && (
-        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}
-          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {weekDays.map((day) => {
               const w = getWeatherForDay(day);
@@ -457,8 +507,7 @@ export function CalendarClient() {
 
       {/* Month View */}
       {!searchQuery && viewMode === "month" && (
-        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}
-          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
               <div key={d} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase">
@@ -523,8 +572,7 @@ export function CalendarClient() {
 
       {/* Day View */}
       {!searchQuery && viewMode === "day" && (
-        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}
-          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}>
           <div className="p-4 border-b border-gray-100">
             {(() => {
               const w = getWeatherForDay(currentDate);
@@ -570,6 +618,8 @@ export function CalendarClient() {
           </div>
         </div>
       )}
+
+      </div>{/* end slideContainerRef */}
     </div>
   );
 }
