@@ -25,6 +25,7 @@ export async function POST(
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const blob = await put(`jobs/${id}/${Date.now()}-${file.name}`, file, {
       access: "public",
+      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     url = blob.url;
   } else {

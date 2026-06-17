@@ -63,10 +63,12 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
         const res = await fetch(`/api/jobs/${jobId}/photos`, { method: "POST", body: formData });
         if (res.ok) {
           const photo = await res.json();
-          setPhotos((prev) => [photo, ...prev]);
+          if (photo?.url) {
+            setPhotos((prev) => [photo, ...prev]);
+          }
         }
-      } catch {
-        // skip failed individual photos
+      } catch (err) {
+        console.error("Photo upload error:", err);
       }
       setUploadingCount((n) => Math.max(0, n - 1));
     }
