@@ -1,7 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RefreshCw, Database } from "lucide-react";
+
+const CLIENT_ID = "792479627906-85orb42anlcio411evqp6lktutkaavm2.apps.googleusercontent.com";
+const CALENDAR_ID = "cftoperations@gmail.com";
+const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            callback: (resp: { access_token?: string; error?: string }) => void;
+          }) => { requestAccessToken: () => void };
+        };
+      };
+    };
+  }
+}
 
 export function SyncButton() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -9,25 +29,60 @@ export function SyncButton() {
   const [error, setError] = useState("");
   const [seedStatus, setSeedStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [seedMsg, setSeedMsg] = useState("");
+  const [gisLoaded, setGisLoaded] = useState(false);
 
-  async function handleSync() {
+  useEffect(() => {
+    if (document.getElementById("gis-script")) { setGisLoaded(true); return; }
+    const script = document.createElement("script");
+    script.id = "gis-script";
+    script.src = "https://accounts.google.com/gsi/client";
+    script.onload = () => setGisLoaded(true);
+    document.body.appendChild(script);
+  }, []);
+
+  function handleSync() {
+    if (!gisLoaded || !window.google) {
+      setError("Google sign-in not loaded yet, try again");
+      setStatus("error");
+      return;
+    }
     setStatus("loading");
     setError("");
     setResult(null);
-    try {
-      const res = await fetch("/api/sync", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Sync failed");
-        setStatus("error");
-      } else {
-        setResult(data);
-        setStatus("success");
-      }
-    } catch {
-      setError("Network error — check your connection");
-      setStatus("error");
-    }
+
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: async (resp) => {
+        if (!resp.access_token) {
+          setError(resp.error || "Google sign-in cancelled");
+          setStatus("error");
+          return;
+        }
+        try {
+          const timeMin = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+          const timeMax = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString();
+          const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&maxResults=500&orderBy=startTime`;
+          const gcalRes = await fetch(url, { headers: { Authorization: `Bearer ${resp.access_token}` } });
+          const gcalData = await gcalRes.json();
+          if (!gcalData.items) throw new Error(gcalData.error?.message || "Failed to fetch calendar");
+
+          const saveRes = await fetch("/api/sync-events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ events: gcalData.items }),
+          });
+          const saveData = await saveRes.json();
+          if (!saveRes.ok) throw new Error(saveData.error || "Save failed");
+          setResult(saveData);
+          setStatus("success");
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Sync failed");
+          setStatus("error");
+        }
+      },
+    });
+    tokenClient.requestAccessToken();
   }
 
   async function handleSeed() {
@@ -55,7 +110,7 @@ export function SyncButton() {
         <div>
           <h2 className="font-semibold text-gray-900">Sync from Google Calendar</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Pull new and updated events from cftoperations@gmail.com. Won't overwrite manual edits.
+            Sign in with Google to pull events from cftoperations@gmail.com.
           </p>
         </div>
         <button
@@ -73,7 +128,6 @@ export function SyncButton() {
           ✓ Sync complete — <strong>{result.created}</strong> new, <strong>{result.updated}</strong> updated, <strong>{result.skipped}</strong> unchanged
         </div>
       )}
-
       {status === "error" && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           {error}
@@ -84,9 +138,9 @@ export function SyncButton() {
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-semibold text-gray-900">Load Google Calendar Jobs</h2>
+          <h2 className="font-semibold text-gray-900">Load Sample Jobs</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Load the 46 jobs from Google Calendar into the database. Safe to run multiple times.
+            Load hardcoded jobs into the database. Safe to run multiple times.
           </p>
         </div>
         <button
