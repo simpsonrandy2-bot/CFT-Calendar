@@ -7,21 +7,8 @@ const CLIENT_ID = "792479627906-85orb42anlcio411evqp6lktutkaavm2.apps.googleuser
 const CALENDAR_ID = "cftoperations@gmail.com";
 const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
-declare global {
-  interface Window {
-    google: {
-      accounts: {
-        oauth2: {
-          initTokenClient: (config: {
-            client_id: string;
-            scope: string;
-            callback: (resp: { access_token?: string; error?: string }) => void;
-          }) => { requestAccessToken: () => void };
-        };
-      };
-    };
-  }
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GIS = any;
 
 export function SyncButton() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -41,7 +28,7 @@ export function SyncButton() {
   }, []);
 
   function handleSync() {
-    if (!gisLoaded || !window.google) {
+    if (!gisLoaded || !(window as GIS).google) {
       setError("Google sign-in not loaded yet, try again");
       setStatus("error");
       return;
@@ -50,7 +37,7 @@ export function SyncButton() {
     setError("");
     setResult(null);
 
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+    const tokenClient = (window as GIS).google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: async (resp) => {
