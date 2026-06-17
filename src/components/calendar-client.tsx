@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   addWeeks, subWeeks, addMonths, subMonths, eachDayOfInterval,
   isSameDay, isWithinInterval, parseISO, addDays, differenceInDays,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, LayoutGrid, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { requestGoogleSync, getLastSyncTime } from "@/lib/google-sync";
 
@@ -68,6 +68,10 @@ export function CalendarClient() {
   const [crewOffs, setCrewOffs] = useState<CrewOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [weather, setWeather] = useState<Record<string, DayWeather>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   const fetchData = useCallback(async (start: Date, end: Date) => {
     setLoading(true);
@@ -176,6 +180,27 @@ export function CalendarClient() {
     fetchData(start, end);
     fetchWeather(start, end);
   }, [currentDate, viewMode, fetchData, fetchWeather, mounted]);
+
+  useEffect(() => {
+    if (!searchQuery || allJobs.length > 0) return;
+    const start = new Date(Date.now() - 365 * 2 * 24 * 60 * 60 * 1000).toISOString();
+    const end = new Date(Date.now() + 365 * 2 * 24 * 60 * 60 * 1000).toISOString();
+    fetch(`/api/calendar?start=${start}&end=${end}`)
+      .then((r) => r.json())
+      .then((d) => setAllJobs(d.jobs || []));
+  }, [searchQuery, allJobs.length]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+    navigate(dx < 0 ? "next" : "prev");
+  }
 
   function navigate(direction: "prev" | "next") {
     if (viewMode === "week") {
@@ -292,13 +317,60 @@ export function CalendarClient() {
         )}
       </div>
 
-      {loading && (
+      <div className="relative mb-2 px-1">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search jobs..."
+          className="w-full pl-8 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {searchQuery && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-2">
+          {(() => {
+            const q = searchQuery.toLowerCase();
+            const results = allJobs.filter((j) =>
+              j.title.toLowerCase().includes(q) ||
+              j.customer?.toLowerCase().includes(q) ||
+              j.jobNumber?.toLowerCase().includes(q) ||
+              j.address?.toLowerCase().includes(q)
+            );
+            if (results.length === 0) return <div className="p-4 text-sm text-gray-400 text-center">No jobs found</div>;
+            return results.slice(0, 20).map((job) => (
+              <Link
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                onClick={() => setSearchQuery("")}
+                className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: job.colorTag }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{job.title}</div>
+                  <div className="text-xs text-gray-400 truncate">{[job.jobNumber, job.address].filter(Boolean).join(" · ")}</div>
+                </div>
+                <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />
+              </Link>
+            ));
+          })()}
+        </div>
+      )}
+
+      {loading && !searchQuery && (
         <div className="text-center py-4 text-gray-400 text-sm animate-pulse">Loading...</div>
       )}
 
       {/* Week View */}
-      {viewMode === "week" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {!searchQuery && viewMode === "week" && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {weekDays.map((day) => {
               const w = getWeatherForDay(day);
@@ -373,8 +445,9 @@ export function CalendarClient() {
       )}
 
       {/* Month View */}
-      {viewMode === "month" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {!searchQuery && viewMode === "month" && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
               <div key={d} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase">
@@ -438,8 +511,9 @@ export function CalendarClient() {
       )}
 
       {/* Day View */}
-      {viewMode === "day" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {!searchQuery && viewMode === "day" && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <div className="p-4 border-b border-gray-100">
             {(() => {
               const w = getWeatherForDay(currentDate);

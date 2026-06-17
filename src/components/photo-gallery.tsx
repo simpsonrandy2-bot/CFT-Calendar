@@ -63,7 +63,6 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleUpload}
           className="hidden"
           id="photo-upload"
