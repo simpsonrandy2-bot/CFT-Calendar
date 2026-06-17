@@ -57,9 +57,18 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
 
     for (const file of files) {
       try {
-        const compressed = await compressImage(file);
+        let uploadFile: Blob;
+        let uploadName: string;
+        try {
+          uploadFile = await compressImage(file);
+          uploadName = file.name.replace(/\.[^.]+$/, ".jpg");
+        } catch {
+          // Compression failed (e.g. HEIC from camera) — upload original
+          uploadFile = file;
+          uploadName = file.name;
+        }
         const formData = new FormData();
-        formData.append("file", compressed, file.name.replace(/\.[^.]+$/, ".jpg"));
+        formData.append("file", uploadFile, uploadName);
         formData.append("caption", caption);
 
         const res = await fetch(`/api/jobs/${jobId}/photos`, { method: "POST", body: formData });
