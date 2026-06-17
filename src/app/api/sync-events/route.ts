@@ -65,15 +65,11 @@ export async function POST(req: Request) {
     const existing = await prisma.job.findUnique({ where: { googleEventId } });
 
     if (existing) {
-      if (existing.title !== title || existing.startDate.toISOString() !== startDate.toISOString()) {
-        await prisma.job.update({
-          where: { googleEventId },
-          data: { title, startDate, endDate, address, description, startTime, jobNumber, jobLead, legacyJobUrl },
-        });
-        updated++;
-      } else {
-        skipped++;
-      }
+      await prisma.job.update({
+        where: { googleEventId },
+        data: { title, startDate, endDate, address, description, startTime, jobNumber, jobLead, legacyJobUrl },
+      });
+      updated++;
     } else {
       await prisma.job.create({
         data: {
