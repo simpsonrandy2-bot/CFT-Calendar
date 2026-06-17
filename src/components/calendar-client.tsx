@@ -9,6 +9,7 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Calendar, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { requestGoogleSync, getLastSyncTime } from "@/lib/google-sync";
 
 interface Job {
   id: string;
@@ -115,6 +116,49 @@ export function CalendarClient() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Load GIS script for auto-sync
+    if (!document.getElementById("gis-script")) {
+      const script = document.createElement("script");
+      script.id = "gis-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      document.body.appendChild(script);
+    }
+
+    const THIRTY_MINUTES = 30 * 60 * 1000;
+
+    function tryAutoSync() {
+      const lastSync = getLastSyncTime();
+      if (Date.now() - lastSync < THIRTY_MINUTES) return;
+      requestGoogleSync({
+        prompt: "",
+        onSuccess: () => {
+          // Refresh calendar data after silent sync
+          const start = viewMode === "week"
+            ? startOfWeek(currentDate, { weekStartsOn: 0 })
+            : viewMode === "day" ? currentDate : startOfMonth(currentDate);
+          const end = viewMode === "week"
+            ? endOfWeek(currentDate, { weekStartsOn: 0 })
+            : viewMode === "day" ? currentDate : endOfMonth(currentDate);
+          fetchData(start, end);
+        },
+      });
+    }
+
+    // Try once on mount (after a short delay so GIS can load)
+    const mountTimer = setTimeout(tryAutoSync, 3000);
+    // Then check every 30 minutes
+    const interval = setInterval(tryAutoSync, THIRTY_MINUTES);
+
+    return () => {
+      clearTimeout(mountTimer);
+      clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;

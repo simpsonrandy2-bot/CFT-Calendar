@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { RefreshCw, Database } from "lucide-react";
-
-const CLIENT_ID = "792479627906-85orb42anlcio411evqp6lktutkaavm2.apps.googleusercontent.com";
-const CALENDAR_ID = "cftoperations@gmail.com";
-const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type GIS = any;
+import { requestGoogleSync, getLastSyncTime } from "@/lib/google-sync";
 
 export function SyncButton() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -18,61 +12,23 @@ export function SyncButton() {
   const [seedMsg, setSeedMsg] = useState("");
   const [cleanupStatus, setCleanupStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [cleanupMsg, setCleanupMsg] = useState("");
-  const [gisLoaded, setGisLoaded] = useState(false);
+  const [lastSync, setLastSync] = useState<number>(0);
 
   useEffect(() => {
-    if (document.getElementById("gis-script")) { setGisLoaded(true); return; }
+    setLastSync(getLastSyncTime());
+    if (document.getElementById("gis-script")) return;
     const script = document.createElement("script");
     script.id = "gis-script";
     script.src = "https://accounts.google.com/gsi/client";
-    script.onload = () => setGisLoaded(true);
     document.body.appendChild(script);
   }, []);
 
   function handleSync() {
-    if (!gisLoaded || !(window as GIS).google) {
-      setError("Google sign-in not loaded yet, try again");
-      setStatus("error");
-      return;
-    }
-    setStatus("loading");
-    setError("");
-    setResult(null);
-
-    const tokenClient = (window as GIS).google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      callback: async (resp: any) => {
-        if (!resp.access_token) {
-          setError(resp.error || "Google sign-in cancelled");
-          setStatus("error");
-          return;
-        }
-        try {
-          const timeMin = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-          const timeMax = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString();
-          const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&maxResults=500&orderBy=startTime`;
-          const gcalRes = await fetch(url, { headers: { Authorization: `Bearer ${resp.access_token}` } });
-          const gcalData = await gcalRes.json();
-          if (!gcalData.items) throw new Error(gcalData.error?.message || "Failed to fetch calendar");
-
-          const saveRes = await fetch("/api/sync-events", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ events: gcalData.items }),
-          });
-          const saveData = await saveRes.json();
-          if (!saveRes.ok) throw new Error(saveData.error || "Save failed");
-          setResult(saveData);
-          setStatus("success");
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Sync failed");
-          setStatus("error");
-        }
-      },
+    requestGoogleSync({
+      onStart: () => { setStatus("loading"); setError(""); setResult(null); },
+      onSuccess: (r) => { setResult(r); setStatus("success"); setLastSync(Date.now()); },
+      onError: (e) => { setError(e); setStatus("error"); },
     });
-    tokenClient.requestAccessToken();
   }
 
   async function handleSeed() {
@@ -105,6 +61,10 @@ export function SyncButton() {
     } catch { setCleanupMsg("Network error"); setCleanupStatus("error"); }
   }
 
+  const lastSyncLabel = lastSync
+    ? `Last synced: ${new Date(lastSync).toLocaleTimeString()}`
+    : "Never synced";
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
       <div className="flex items-start justify-between gap-4">
@@ -113,6 +73,7 @@ export function SyncButton() {
           <p className="text-sm text-gray-500 mt-0.5">
             Sign in with Google to pull events from cftoperations@gmail.com.
           </p>
+          <p className="text-xs text-gray-400 mt-1">{lastSyncLabel} · Auto-syncs every 30 min</p>
         </div>
         <button
           onClick={handleSync}
