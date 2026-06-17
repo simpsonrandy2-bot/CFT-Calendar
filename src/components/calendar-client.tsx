@@ -238,7 +238,7 @@ export function CalendarClient() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate("prev")}
@@ -393,7 +393,7 @@ export function CalendarClient() {
                   key={day.toISOString()}
                   onClick={() => { setCurrentDate(day); setViewMode("day"); }}
                   className={cn(
-                    "min-h-32 p-1 border-b border-r border-gray-100 cursor-pointer hover:bg-blue-50/30 transition-colors",
+                    "min-h-20 p-1 border-b border-r border-gray-100 cursor-pointer hover:bg-blue-50/30 transition-colors",
                     !isCurrentMonth && "bg-gray-50/50",
                     isSameDay(day, today) && "bg-blue-50/50"
                   )}
@@ -417,7 +417,7 @@ export function CalendarClient() {
                       {dayCrewOff.map(co => co.crewName).join(", ")} off
                     </div>
                   )}
-                  {dayJobs.slice(0, 5).map((job) => (
+                  {dayJobs.slice(0, 3).map((job) => (
                     <Link
                       key={job.id}
                       href={`/jobs/${job.id}`}
@@ -427,8 +427,8 @@ export function CalendarClient() {
                       {job.title}
                     </Link>
                   ))}
-                  {dayJobs.length > 5 && (
-                    <div className="text-xs text-gray-400 pl-1">+{dayJobs.length - 5} more</div>
+                  {dayJobs.length > 3 && (
+                    <div className="text-xs text-gray-400 pl-1">+{dayJobs.length - 3} more</div>
                   )}
                 </div>
               );
