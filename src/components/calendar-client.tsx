@@ -263,13 +263,13 @@ export function CalendarClient() {
 
   function getJobsForDay(day: Date): Job[] {
     return jobs.filter((job) => {
-      const start = parseISO(job.startDate);
-      const end = parseISO(job.endDate);
-      try {
-        return isWithinInterval(day, { start, end });
-      } catch {
-        return isSameDay(day, start);
-      }
+      const start = new Date(job.startDate);
+      const end = new Date(job.endDate);
+      // Compare date parts only to avoid UTC/local timezone shifts
+      const dayStr = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+      const startStr = `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
+      const endStr = `${end.getFullYear()}-${end.getMonth()}-${end.getDate()}`;
+      return dayStr >= startStr && dayStr <= endStr;
     });
   }
 
