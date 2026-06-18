@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trash2, X, ChevronDown, ChevronRight, Save, RefreshCw } from "lucide-react";
+import { Trash2, X, ChevronDown, ChevronRight, Save, RefreshCw, RotateCcw } from "lucide-react";
+import { DEFAULT_CHECKLIST } from "@/lib/default-checklist";
 
 interface TemplateItem {
   id?: string;
@@ -95,6 +96,12 @@ export function TemplatesClient() {
     setDirty(true);
   }
 
+  function loadDefaults() {
+    if (!confirm("Replace all items in this template with the standard defaults?")) return;
+    setEditItems(DEFAULT_CHECKLIST.map((item, i) => ({ ...item, sortOrder: i })));
+    setDirty(true);
+  }
+
   async function save() {
     if (!selected) return;
     setSaving(true);
@@ -171,13 +178,22 @@ export function TemplatesClient() {
                   <h2 className="font-bold text-gray-900">{selected.name}</h2>
                   <p className="text-xs text-gray-400 mt-0.5">{editItems.filter(i => i.checked).length} of {editItems.length} items checked by default</p>
                 </div>
-                <button
-                  onClick={save}
-                  disabled={!dirty || saving}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 disabled:opacity-40"
-                >
-                  <Save size={14} /> {saving ? "Saving…" : "Save Template"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={loadDefaults}
+                    title="Replace all items with standard defaults"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    <RotateCcw size={13} /> Load Defaults
+                  </button>
+                  <button
+                    onClick={save}
+                    disabled={!dirty || saving}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 disabled:opacity-40"
+                  >
+                    <Save size={14} /> {saving ? "Saving…" : "Save Template"}
+                  </button>
+                </div>
               </div>
 
               <div className="p-5 space-y-3">
