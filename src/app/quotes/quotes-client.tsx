@@ -334,32 +334,40 @@ export function QuotesClient() {
                             ${totalCost.toLocaleString()}
                           </span>
                         )}
-                        {/* PDF */}
-                        <button title="PDF" className="p-1.5 text-gray-400 hover:text-gray-700"><FileText size={14} /></button>
 
-                        {/* Approve / Un-approve toggle */}
-                        {q.status === "Pending" && (
-                          <button onClick={() => changeStatus(q.id, "approve")} title="Approve & Lock"
-                            className="p-1.5 text-gray-400 hover:text-green-600"><ThumbsUp size={14} /></button>
-                        )}
-                        {q.status === "Locked" && (
-                          <button onClick={() => changeStatus(q.id, "pending")} title="Un-approve (back to Pending)"
-                            className="p-1.5 text-green-600 hover:text-yellow-600"><ThumbsUp size={14} /></button>
-                        )}
-                        {(q.status === "Pending" || q.status === "Locked") && (
-                          <button onClick={() => changeStatus(q.id, "reject")} title="Reject"
-                            className="p-1.5 text-gray-400 hover:text-red-500"><ThumbsDown size={14} /></button>
-                        )}
-                        {q.status === "Draft" && (
-                          <button onClick={() => changeStatus(q.id, "pending")} title="Send for Approval"
-                            className="p-1.5 text-xs text-gray-400 hover:text-yellow-600 font-medium">Send</button>
-                        )}
-
-                        {/* Calendar — only active when Locked */}
+                        {/* PDF — always visible */}
                         <button
-                          onClick={() => { if (q.status === "Locked") { setCalModal(q); setPourDate(""); } }}
+                          title="View PDF"
+                          onClick={() => alert("PDF generation coming soon")}
+                          className="p-1.5 text-gray-400 hover:text-gray-700"
+                        >
+                          <FileText size={14} />
+                        </button>
+
+                        {/* Thumbs up — always visible; green when Locked (click to un-approve), gray otherwise */}
+                        <button
+                          title={q.status === "Locked" ? "Un-approve (back to Pending)" : "Approve & Lock"}
+                          onClick={() => changeStatus(q.id, q.status === "Locked" ? "pending" : "approve")}
+                          className={`p-1.5 ${q.status === "Locked" ? "text-green-600 hover:text-yellow-500" : "text-gray-400 hover:text-green-600"}`}
+                        >
+                          <ThumbsUp size={14} />
+                        </button>
+
+                        {/* Thumbs down — always visible; red when Lost */}
+                        <button
+                          title="Reject"
+                          onClick={() => changeStatus(q.id, q.status === "Lost" ? "draft" : "reject")}
+                          className={`p-1.5 ${q.status === "Lost" ? "text-red-500 hover:text-gray-400" : "text-gray-400 hover:text-red-500"}`}
+                        >
+                          <ThumbsDown size={14} />
+                        </button>
+
+                        {/* Calendar — always visible; blue & active only when Locked */}
+                        <button
                           title={q.status === "Locked" ? "Schedule pour date" : "Approve quote first to schedule"}
-                          className={`p-1.5 ${q.status === "Locked" ? "text-blue-500 hover:text-blue-700" : "text-gray-200 cursor-not-allowed"}`}>
+                          onClick={() => { if (q.status === "Locked") { setCalModal(q); setPourDate(""); } }}
+                          className={`p-1.5 ${q.status === "Locked" ? "text-blue-500 hover:text-blue-700" : "text-gray-300 cursor-default"}`}
+                        >
                           <CalendarDays size={14} />
                         </button>
 
