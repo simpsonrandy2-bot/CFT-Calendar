@@ -90,6 +90,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Product(s)</th>
             <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Strength</th>
             <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Thickness</th>
+            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Mobilizations</th>
           </tr>
         </thead>
         <tbody>
@@ -97,12 +98,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc([item.product1, item.product2].filter(Boolean).join(", "))}</td>
             <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.strengthPsi ? `${item.strengthPsi} psi` : "")}</td>
             <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.avgThickness ? `Avg. ${item.avgThickness}` : "")}</td>
+            <td style="padding:5px 8px;border:1px solid #e2e8f0">${item.mobs > 0 ? item.mobs : ""}</td>
           </tr>
         </tbody>
         <thead>
           <tr style="background:${ACCENT};color:white">
             <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Pouring On</th>
             <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Floors</th>
+            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Levels</th>
             <th style="padding:5px 8px;text-align:right;font-weight:600;text-transform:uppercase;font-size:7.5pt">Lump Sum Price</th>
           </tr>
         </thead>
@@ -110,6 +113,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           <tr style="background:#f8fafc">
             <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.pouringOn)}</td>
             <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.floors)}</td>
+            <td style="padding:5px 8px;border:1px solid #e2e8f0">${item.levels > 0 ? item.levels : ""}</td>
             <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right;font-weight:700;color:${ACCENT}">$${item.projectCost.toLocaleString()} + hst${item.squareFootage > 0 && !item.excludeSqFt ? ` ($${(item.projectCost / item.squareFootage).toFixed(2)}/ sq ft)` : ""}</td>
           </tr>
         </tbody>
@@ -118,14 +122,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     </div>`).join("");
 
   const checklistSections = SECTION_ORDER
-    .filter(s => checklistBySection[s]?.length)
     .map(section => {
-      const items = checklistBySection[section].map(item => `
+      const checkedItems = (checklistBySection[section] || []).filter(item => item.checked);
+      if (!checkedItems.length) return "";
+      const items = checkedItems.map(item => `
         <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:3px;font-size:8.5pt">
-          <div style="width:11px;height:11px;border:1.5px solid ${item.checked ? ACCENT : "#d1d5db"};border-radius:2px;flex-shrink:0;margin-top:1px;background:${item.checked ? ACCENT : "white"};display:flex;align-items:center;justify-content:center">
-            ${item.checked ? '<span style="color:white;font-size:7pt;font-weight:900;line-height:1">✓</span>' : ""}
+          <div style="width:11px;height:11px;border:1.5px solid ${ACCENT};border-radius:2px;flex-shrink:0;margin-top:1px;background:${ACCENT};display:flex;align-items:center;justify-content:center">
+            <span style="color:white;font-size:7pt;font-weight:900;line-height:1">✓</span>
           </div>
-          <span style="color:${item.checked ? "#111" : "#6b7280"}">${esc(item.text)}</span>
+          <span style="color:#111">${esc(item.text)}</span>
         </div>`).join("");
       return `
         <div style="margin-bottom:14px;break-inside:avoid">
@@ -156,35 +161,36 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 <body>
 <div class="page">
 
-  <!-- Header -->
+  <!-- Header: logo left | date/quotation right -->
   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid ${ACCENT}">
-    <div style="display:flex;align-items:center;gap:14px">
+    <!-- Left: company logo + name -->
+    <div style="display:flex;align-items:flex-start;gap:12px">
       ${logoData
-        ? `<img src="${logoData}" alt="Logo" style="max-height:70px;max-width:200px;object-fit:contain" />`
+        ? `<img src="${logoData}" alt="Logo" style="max-height:80px;max-width:220px;object-fit:contain" />`
         : `<div style="font-size:28pt;font-weight:900;color:${ACCENT};letter-spacing:-1px">CFT</div>`
       }
-      <div>
-        <div style="font-size:12pt;font-weight:800;color:${ACCENT};letter-spacing:0.3px">${esc(coName)}</div>
-        ${coTagline ? `<div style="font-size:8.5pt;color:#555;text-transform:uppercase;letter-spacing:0.5px">${esc(coTagline)}</div>` : ""}
-        ${coPhone ? `<div style="font-size:8pt;color:#555;margin-top:3px">${esc(coPhone)}</div>` : ""}
-        ${coEmail ? `<div style="font-size:8pt;color:#555">${esc(coEmail)}</div>` : ""}
-      </div>
+      ${!logoData ? `<div>
+        <div style="font-size:12pt;font-weight:800;color:${ACCENT}">${esc(coName)}</div>
+        ${coTagline ? `<div style="font-size:8pt;color:#555;text-transform:uppercase;letter-spacing:0.5px">${esc(coTagline)}</div>` : ""}
+        ${coPhone ? `<div style="font-size:7.5pt;color:#555;margin-top:2px">${esc(coPhone)}</div>` : ""}
+        ${coEmail ? `<div style="font-size:7.5pt;color:#555">${esc(coEmail)}</div>` : ""}
+      </div>` : ""}
     </div>
+    <!-- Right: date/quote# + Quotation heading -->
     <div style="text-align:right">
-      <div style="font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:1px">Date:</div>
-      <div style="font-size:9pt;font-weight:600;margin-bottom:6px">${fmtDate(quote.createdAt)}</div>
-      <div style="font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:1px">Quote No:</div>
-      <div style="font-size:16pt;font-weight:800;color:${ACCENT}">${esc(quote.quoteNumber)}</div>
+      <table style="margin-left:auto;border-collapse:collapse;margin-bottom:8px">
+        <tr>
+          <td style="font-size:8pt;color:#555;padding-right:10px;white-space:nowrap">Date:</td>
+          <td style="font-size:8.5pt;font-weight:600;white-space:nowrap">${fmtDate(quote.createdAt)}</td>
+        </tr>
+        <tr>
+          <td style="font-size:8pt;color:#555;padding-right:10px;white-space:nowrap">Quote No:</td>
+          <td style="font-size:8.5pt;font-weight:600;white-space:nowrap">${esc(quote.quoteNumber)}</td>
+        </tr>
+      </table>
+      <div style="font-size:28pt;font-weight:300;color:#444;letter-spacing:-0.5px;border-bottom:2px solid ${ACCENT};padding-bottom:2px">Quotation</div>
+      ${quote.authorName ? `<div style="font-size:7.5pt;color:#888;margin-top:4px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
     </div>
-  </div>
-
-  <!-- Quotation title -->
-  <div style="margin-bottom:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <h1 style="font-size:26pt;font-weight:300;color:#333;letter-spacing:-0.5px">Quotation</h1>
-      ${quote.authorName ? `<div style="font-size:8.5pt;color:#666">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
-    </div>
-    <div style="height:2px;background:${ACCENT};margin-top:4px"></div>
   </div>
 
   <!-- Client & Project side by side -->
