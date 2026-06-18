@@ -109,6 +109,7 @@ export function QuotesClient() {
   const [calModal, setCalModal] = useState<Quote | null>(null);
   const [pourDate, setPourDate] = useState("");
   const [scheduled, setScheduled] = useState<Set<string>>(new Set());
+  const [templateName, setTemplateName] = useState("Default");
 
   const limit = 25;
 
@@ -153,7 +154,7 @@ export function QuotesClient() {
     const isNew = modal === "new";
     const url = isNew ? "/api/quotes" : `/api/quotes/${(modal as Quote).id}`;
     const method = isNew ? "POST" : "PUT";
-    const body = { ...form, checklistItems };
+    const body = isNew ? { ...form, checklistItems, templateName } : { ...form, checklistItems };
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
       await fetchQuotes();
@@ -409,6 +410,23 @@ export function QuotesClient() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Template selector — new quotes only */}
+              {modal === "new" && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <label className="block text-sm font-semibold text-orange-800 mb-2">Checklist Template (Product Type)</label>
+                  <select
+                    value={templateName}
+                    onChange={e => setTemplateName(e.target.value)}
+                    className="w-full border border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  >
+                    {["Default","LR 2500","LR 3500","LR 4500","LR3500 FR","Maxxon Gyp-Crete High Performance","Maxxon MF","Maxxon Commercial Pro Level-Crete","EXP Topping","Quik-Top"].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-orange-600 mt-1">The checklist will auto-populate with the saved defaults for this product.</p>
+                </div>
+              )}
+
               {/* Company & Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>

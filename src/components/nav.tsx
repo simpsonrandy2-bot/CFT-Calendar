@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Calendar, List, Users, LogOut, Plus, Building2,
-  FileText, ShoppingCart, Package
+  FileText, ShoppingCart, Package, Settings
 } from "lucide-react";
 
 interface NavProps {
@@ -69,6 +69,12 @@ export function Nav({ role }: NavProps) {
               >
                 <Plus size={16} />
                 <span className="hidden sm:inline">New Quote</span>
+              </Link>
+            )}
+            {role === "office" && (
+              <Link href="/settings/templates" title="Checklist Templates"
+                className={cn("p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors", pathname.startsWith("/settings") ? "text-white bg-gray-700" : "")}>
+                <Settings size={15} />
               </Link>
             )}
             <span className="text-xs text-gray-400 capitalize hidden sm:inline">{role}</span>

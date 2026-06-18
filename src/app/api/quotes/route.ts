@@ -116,6 +116,18 @@ export async function POST(request: NextRequest) {
 
   const data = await request.json();
 
+  // Try to find a template matching the requested product/template name
+  let checklistItems = DEFAULT_CHECKLIST;
+  if (data.templateName) {
+    const template = await prisma.checklistTemplate.findUnique({
+      where: { name: data.templateName },
+      include: { items: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }] } },
+    });
+    if (template && template.items.length > 0) {
+      checklistItems = template.items.map(({ section, text, checked, sortOrder }) => ({ section, text, checked, sortOrder }));
+    }
+  }
+
   const quote = await prisma.quote.create({
     data: {
       quoteNumber: data.quoteNumber,
@@ -135,7 +147,7 @@ export async function POST(request: NextRequest) {
         create: data.items.map((item: Record<string, unknown>, i: number) => ({ ...item, sortOrder: i })),
       } : undefined,
       checklistItems: {
-        create: DEFAULT_CHECKLIST,
+        create: checklistItems,
       },
     },
     include: {
