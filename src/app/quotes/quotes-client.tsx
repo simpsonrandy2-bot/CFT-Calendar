@@ -111,6 +111,8 @@ export function QuotesClient() {
   const [pourDate, setPourDate] = useState("");
   const [scheduled, setScheduled] = useState<Set<string>>(new Set());
   const [newChecklistText, setNewChecklistText] = useState<Record<string, string>>({});
+  const [companySearch, setCompanySearch] = useState("");
+  const [companyOpen, setCompanyOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -152,6 +154,7 @@ export function QuotesClient() {
     const { quoteNumber } = await numRes.json();
     setForm({ quoteNumber, items: [emptyItem()], status: "Draft" });
     setChecklistItems([]);
+    setCompanySearch("");
     setModal("new");
   }
 
@@ -160,6 +163,8 @@ export function QuotesClient() {
     const full = await res.json();
     setForm({ ...full, items: full.items || [emptyItem()] });
     setChecklistItems(full.checklistItems || []);
+    const existing = companies.find(c => c.id === full.companyId);
+    setCompanySearch(existing?.name || "");
     setModal(full);
   }
 
@@ -439,13 +444,39 @@ export function QuotesClient() {
             <div className="p-6 space-y-6">
               {/* Company & Date */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Submitted To</label>
-                  <select disabled={readOnly} value={form.companyId || ""} onChange={e => setForm(f => ({ ...f, companyId: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-50">
-                    <option value="">Select company...</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <input
+                    disabled={readOnly}
+                    value={companySearch}
+                    onChange={e => {
+                      setCompanySearch(e.target.value);
+                      setForm(f => ({ ...f, companyId: undefined }));
+                      setCompanyOpen(true);
+                    }}
+                    onFocus={() => setCompanyOpen(true)}
+                    onBlur={() => setTimeout(() => setCompanyOpen(false), 150)}
+                    placeholder="Type to search companies…"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-50"
+                  />
+                  {companyOpen && companySearch.length > 0 && (() => {
+                    const filtered = companies.filter(c => c.name.toLowerCase().includes(companySearch.toLowerCase())).slice(0, 8);
+                    if (!filtered.length) return null;
+                    return (
+                      <ul className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {filtered.map(c => (
+                          <li key={c.id}
+                            onMouseDown={() => {
+                              setForm(f => ({ ...f, companyId: c.id }));
+                              setCompanySearch(c.name);
+                              setCompanyOpen(false);
+                            }}
+                            className="px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 hover:text-orange-700"
+                          >{c.name}</li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
