@@ -134,10 +134,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 <head>
   <meta charset="utf-8"/>
   <title>Quote ${esc(quote.quoteNumber)} — ${esc(clientName || quote.projectName)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;300&display=swap" rel="stylesheet"/>
   <style>
     @page { margin: 0.75in; size: letter; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111; background: white; line-height: 1.4; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+    .quotation-heading { font-family: 'Raleway', Arial, sans-serif; font-weight: 200; font-size: 36pt; color: #333; letter-spacing: 1px; line-height: 1; border-bottom: 1.5px solid #555; padding-bottom: 6px; display: block; }
     @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
     @media screen {
       body { background: #d1d5db; }
@@ -151,9 +154,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <!-- HEADER -->
   <table style="width:100%;border-collapse:collapse;margin-bottom:0">
     <tr>
-      <td style="vertical-align:bottom;padding-bottom:14px;width:52%">
+      <td style="vertical-align:bottom;padding-bottom:14px;width:55%">
         ${logoData
-          ? `<img src="${logoData}" alt="Logo" style="max-height:80px;width:auto;max-width:300px;object-fit:contain;display:block;image-rendering:crisp-edges"/>`
+          ? `<img src="${logoData}" alt="Logo" style="max-height:85px;width:auto;max-width:320px;object-fit:contain;display:block"/>`
           : `<table style="border-collapse:collapse"><tr>
                <td style="font-size:34pt;font-weight:900;color:#333;line-height:1;padding-right:10px">CFT</td>
                <td style="vertical-align:middle">
@@ -166,18 +169,22 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         }
       </td>
       <td style="vertical-align:bottom;text-align:right;padding-bottom:14px">
-        <div style="font-size:8.5pt;color:#555;margin-bottom:2px">
-          Date:&nbsp;&nbsp;<strong style="font-size:9pt;color:#111">${fmtDate(quote.createdAt)}</strong>
-        </div>
-        <div style="font-size:8.5pt;color:#555;margin-bottom:12px">
-          Quote No:&nbsp;&nbsp;<strong style="font-size:9pt;color:#111">${esc(quote.quoteNumber)}</strong>
-        </div>
-        <div style="font-size:32pt;font-weight:300;color:#333;letter-spacing:-1px;line-height:1;border-bottom:2px solid #444;padding-bottom:6px;min-width:200px">Quotation</div>
+        <table style="border-collapse:collapse;margin-bottom:12px;margin-left:auto">
+          <tr>
+            <td style="font-size:8pt;color:#777;padding-right:8px;white-space:nowrap;font-weight:400">Date:</td>
+            <td style="font-size:9pt;font-weight:700;color:#111;white-space:nowrap">${fmtDate(quote.createdAt)}</td>
+          </tr>
+          <tr>
+            <td style="font-size:8pt;color:#777;padding-right:8px;white-space:nowrap;font-weight:400">Quote N<sup>o</sup>:</td>
+            <td style="font-size:9pt;font-weight:700;color:#111;white-space:nowrap">${esc(quote.quoteNumber)}</td>
+          </tr>
+        </table>
+        <span class="quotation-heading">Quotation</span>
         ${quote.authorName ? `<div style="font-size:7.5pt;color:#888;margin-top:4px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
       </td>
     </tr>
   </table>
-  <div style="border-top:2px solid #444;margin-bottom:18px"></div>
+  <div style="border-top:1.5px solid #555;margin-bottom:16px"></div>
 
   <!-- CLIENT + PROJECT -->
   <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
