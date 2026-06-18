@@ -98,17 +98,24 @@ export function TemplatesClient() {
   async function save() {
     if (!selected) return;
     setSaving(true);
-    const res = await fetch(`/api/checklist-templates/${selected.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: selected.name, items: editItems }),
-    });
-    const updated = await res.json();
-    setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
-    setSelected(updated);
-    setEditItems(updated.items.map((i: TemplateItem) => ({ ...i })));
-    setDirty(false);
-    setSaving(false);
+    try {
+      const res = await fetch(`/api/checklist-templates/${selected.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: selected.name, items: editItems }),
+      });
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      const updated = await res.json();
+      setTemplates(prev => prev.map(t => t.id === updated.id ? updated : t));
+      setSelected(updated);
+      setEditItems(updated.items.map((i: TemplateItem) => ({ ...i })));
+      setDirty(false);
+    } catch (err) {
+      alert("Failed to save template. Please try again.");
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   const itemsBySection = (section: string) => editItems.filter(i => i.section === section);

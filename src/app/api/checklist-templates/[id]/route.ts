@@ -25,7 +25,14 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     where: { id },
     data: {
       name,
-      items: items ? { create: items.map((item: Record<string, unknown>, i: number) => ({ ...item, sortOrder: i })) } : undefined,
+      items: items ? {
+        create: items.map((item: Record<string, unknown>, i: number) => ({
+          section: item.section,
+          text: item.text,
+          checked: item.checked ?? false,
+          sortOrder: i,
+        }))
+      } : undefined,
     },
     include: { items: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }] } },
   });
