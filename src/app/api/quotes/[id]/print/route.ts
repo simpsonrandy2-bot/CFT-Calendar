@@ -91,11 +91,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   </style>
 </head>
 <body>
-  <div class="no-print" style="position:fixed;top:16px;right:16px;z-index:100;display:flex;gap:8px">
-    <button onclick="window.print()" style="background:#f97316;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;font-size:14px">Print / Save PDF</button>
-    <button onclick="window.close()" style="background:#6b7280;color:white;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;font-size:14px">Close</button>
-  </div>
-
   <div class="page">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;border-bottom:2px solid #f97316;padding-bottom:16px">
