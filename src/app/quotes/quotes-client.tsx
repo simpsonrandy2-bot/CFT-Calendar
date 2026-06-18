@@ -339,7 +339,7 @@ export function QuotesClient() {
                         {/* PDF — always visible */}
                         <button
                           title="View PDF"
-                          onClick={() => window.open(`/quotes/${q.id}/print`, "_blank")}
+                          onClick={() => window.open(`/api/quotes/${q.id}/print`, "_blank")}
                           className="p-1.5 text-gray-400 hover:text-gray-700"
                         >
                           <FileText size={14} />
