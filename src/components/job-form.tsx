@@ -176,7 +176,12 @@ export function JobForm({ initialData, mode }: JobFormProps) {
             required
             type="date"
             value={form.startDate}
-            onChange={(e) => set("startDate", e.target.value)}
+            onChange={(e) => {
+              set("startDate", e.target.value);
+              if (!form.endDate || form.endDate < e.target.value) {
+                set("endDate", e.target.value);
+              }
+            }}
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
