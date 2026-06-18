@@ -317,7 +317,7 @@ export function QuotesClient() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                <th className="px-4 py-3 text-left w-8"></th>
+                <th className="px-4 py-3 text-left w-14"></th>
                 <th className="px-4 py-3 text-left">Company</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Location</th>
                 <th className="px-4 py-3 text-left hidden lg:table-cell">Date</th>
@@ -341,9 +341,10 @@ export function QuotesClient() {
                   <tr key={q.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       {q.company?.logo ? (
-                        <img src={q.company.logo} alt="" className="w-8 h-8 rounded object-cover" />
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={q.company.logo} alt={q.company.name} className="w-12 h-12 rounded-lg object-contain bg-white border border-gray-100 p-0.5" />
                       ) : (
-                        <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                        <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600 border border-orange-200">
                           {q.company?.name?.slice(0, 2).toUpperCase() || "??"}
                         </div>
                       )}
