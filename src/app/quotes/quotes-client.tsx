@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, Search, Edit2, Trash2, ThumbsUp, ThumbsDown, X, ChevronDown, FileText, CalendarDays } from "lucide-react";
 
 interface QuoteItem {
@@ -111,6 +112,10 @@ export function QuotesClient() {
   const [scheduled, setScheduled] = useState<Set<string>>(new Set());
   const [newChecklistText, setNewChecklistText] = useState<Record<string, string>>({});
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const didAutoOpen = useRef(false);
+
   const limit = 25;
 
   const fetchQuotes = useCallback(async () => {
@@ -132,6 +137,15 @@ export function QuotesClient() {
   useEffect(() => {
     fetch("/api/companies?limit=1000").then(r => r.json()).then(d => setCompanies(d.companies || []));
   }, []);
+
+  useEffect(() => {
+    if (searchParams.get("new") === "1" && !didAutoOpen.current) {
+      didAutoOpen.current = true;
+      router.replace("/quotes");
+      openNew();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   async function openNew() {
     const numRes = await fetch("/api/quotes/next-number");
