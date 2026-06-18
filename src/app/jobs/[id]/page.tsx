@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { AuthWrapper } from "@/components/auth-wrapper";
 import { PhotoGallery } from "@/components/photo-gallery";
-import { formatDateRange } from "@/lib/utils";
+import { DateDisplay } from "@/components/date-display";
 import { ExternalLink, Edit, MapPin, User, Phone, Clock } from "lucide-react";
 
 export default async function JobDetailPage({
@@ -63,7 +63,7 @@ export default async function JobDetailPage({
           <div className="px-4 py-3 flex items-start gap-3">
             <Clock size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="font-medium">{formatDateRange(job.startDate, job.endDate)}</span>
+              <span className="font-medium"><DateDisplay start={job.startDate.toISOString()} end={job.endDate.toISOString()} /></span>
               {job.startTime && <span className="text-gray-500 ml-2">@ {job.startTime}</span>}
             </div>
           </div>
