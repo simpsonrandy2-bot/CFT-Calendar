@@ -153,7 +153,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     <tr>
       <td style="vertical-align:bottom;padding-bottom:14px;width:52%">
         ${logoData
-          ? `<img src="${logoData}" alt="Logo" style="max-height:90px;max-width:260px;object-fit:contain;display:block"/>`
+          ? `<img src="${logoData}" alt="Logo" style="height:90px;width:auto;max-width:340px;object-fit:contain;display:block"/>`
           : `<table style="border-collapse:collapse"><tr>
                <td style="font-size:34pt;font-weight:900;color:#333;line-height:1;padding-right:10px">CFT</td>
                <td style="vertical-align:middle">
