@@ -106,8 +106,7 @@ export function QuotesClient() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [calModal, setCalModal] = useState<Quote | null>(null);
-  const [pourDate, setPourDate] = useState("");
+  const [scheduled, setScheduled] = useState<Set<string>>(new Set());
 
   const limit = 25;
 
@@ -174,9 +173,8 @@ export function QuotesClient() {
     fetchQuotes();
   }
 
-  async function schedulePour(q: Quote, date: string) {
-    if (!date) return;
-    // Create a job on the calendar via the existing jobs API
+  async function schedulePour(q: Quote) {
+    const date = new Date().toISOString().slice(0, 10);
     const totalCost = q.items.reduce((a, i) => a + i.projectCost, 0);
     const firstItem = q.items[0];
     await fetch("/api/jobs", {
@@ -196,8 +194,7 @@ export function QuotesClient() {
         colorTag: "#f97316",
       }),
     });
-    setCalModal(null);
-    setPourDate("");
+    setScheduled(prev => new Set(prev).add(q.id));
   }
 
   function addItem() {
@@ -362,11 +359,11 @@ export function QuotesClient() {
                           <ThumbsDown size={14} />
                         </button>
 
-                        {/* Calendar — always visible; blue & active only when Locked */}
+                        {/* Calendar — always visible; active only when Locked */}
                         <button
-                          title={q.status === "Locked" ? "Schedule pour date" : "Approve quote first to schedule"}
-                          onClick={() => { if (q.status === "Locked") { setCalModal(q); setPourDate(""); } }}
-                          className={`p-1.5 ${q.status === "Locked" ? "text-blue-500 hover:text-blue-700" : "text-gray-300 cursor-default"}`}
+                          title={q.status === "Locked" ? scheduled.has(q.id) ? "Added to calendar" : "Add to calendar" : "Approve quote first to schedule"}
+                          onClick={() => { if (q.status === "Locked" && !scheduled.has(q.id)) schedulePour(q); }}
+                          className={`p-1.5 ${q.status === "Locked" ? scheduled.has(q.id) ? "text-green-500" : "text-blue-500 hover:text-blue-700" : "text-gray-300 cursor-default"}`}
                         >
                           <CalendarDays size={14} />
                         </button>
@@ -652,47 +649,6 @@ export function QuotesClient() {
         </div>
       )}
 
-      {/* Pour Date Scheduler Modal */}
-      {calModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm">
-            <div className="flex items-center justify-between p-6 border-b">
-              <div>
-                <h2 className="text-lg font-bold">Schedule Pour Date</h2>
-                <div className="text-sm text-gray-500">{calModal.company?.name || calModal.quoteNumber}</div>
-              </div>
-              <button onClick={() => setCalModal(null)}><X size={20} /></button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select pour date</label>
-                <input
-                  type="date"
-                  value={pourDate}
-                  onChange={e => setPourDate(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-orange-500"
-                />
-              </div>
-              {calModal.projectName && (
-                <p className="text-sm text-gray-500">Project: <span className="font-medium text-gray-700">{calModal.projectName}</span></p>
-              )}
-              {calModal.location && (
-                <p className="text-sm text-gray-500">Location: <span className="font-medium text-gray-700">{calModal.location}</span></p>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t">
-              <button onClick={() => setCalModal(null)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-              <button
-                onClick={() => schedulePour(calModal, pourDate)}
-                disabled={!pourDate}
-                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 flex items-center gap-2"
-              >
-                <CalendarDays size={16} /> Add to Calendar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
