@@ -194,7 +194,7 @@ export function ContactClient() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left w-10"></th>
+                  <th className="px-4 py-3 text-left w-20"></th>
                   <th className="px-4 py-3 text-left">Company</th>
                   <th className="px-4 py-3 text-left hidden md:table-cell">Primary Contact</th>
                   <th className="px-4 py-3 text-left hidden lg:table-cell">Phone</th>
@@ -214,9 +214,10 @@ export function ContactClient() {
                     <tr key={c.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
                         {c.logo ? (
-                          <img src={c.logo} alt={c.name} className="w-8 h-8 rounded object-cover" />
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={c.logo} alt={c.name} className="w-14 h-14 rounded-lg object-contain bg-white border border-gray-100 p-0.5" />
                         ) : (
-                          <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                          <div className="w-14 h-14 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600 border border-orange-200">
                             {initials(c.name)}
                           </div>
                         )}
