@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Calendar, List, Users, LogOut, Plus, RefreshCw } from "lucide-react";
+import {
+  Calendar, List, Users, LogOut, Plus, Building2,
+  FileText, ShoppingCart, Package
+} from "lucide-react";
 
 interface NavProps {
   role: "office" | "crew";
@@ -19,11 +22,22 @@ export function Nav({ role }: NavProps) {
     router.refresh();
   }
 
-  const links = [
+  const officeLinks = [
+    { href: "/contact", label: "Contacts", icon: Building2 },
+    { href: "/quotes", label: "Quotes", icon: FileText },
+    { href: "/jobs", label: "Jobs", icon: List },
+    { href: "/purchasing", label: "Purchasing", icon: ShoppingCart },
+    { href: "/inventory", label: "Inventory", icon: Package },
+    { href: "/calendar", label: "Calendar", icon: Calendar },
+  ];
+
+  const crewLinks = [
     { href: "/calendar", label: "Calendar", icon: Calendar },
     { href: "/jobs", label: "Jobs", icon: List },
     { href: "/crew-off", label: "Crew Off", icon: Users },
   ];
+
+  const links = role === "office" ? officeLinks : crewLinks;
 
   return (
     <nav className="bg-gray-900 text-white">
@@ -50,20 +64,11 @@ export function Nav({ role }: NavProps) {
           <div className="flex items-center gap-2">
             {role === "office" && (
               <Link
-                href="/import"
-                className="flex items-center gap-1.5 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                <RefreshCw size={16} />
-                <span className="hidden sm:inline">Sync</span>
-              </Link>
-            )}
-            {role === "office" && (
-              <Link
-                href="/jobs/new"
+                href="/quotes/new"
                 className="flex items-center gap-1.5 px-3 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors"
               >
                 <Plus size={16} />
-                <span className="hidden sm:inline">New Job</span>
+                <span className="hidden sm:inline">New Quote</span>
               </Link>
             )}
             <span className="text-xs text-gray-400 capitalize hidden sm:inline">{role}</span>

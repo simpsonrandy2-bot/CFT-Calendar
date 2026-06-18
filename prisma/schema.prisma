@@ -51,3 +51,137 @@ model CrewMember {
   id   String @id @default(cuid())
   name String @unique
 }
+
+model Company {
+  id         String   @id @default(cuid())
+  name       String
+  logo       String?
+  type       String   @default("Customer")
+  address    String   @default("")
+  city       String   @default("")
+  province   String   @default("")
+  postalCode String   @default("")
+  email      String   @default("")
+  phone      String   @default("")
+  website    String   @default("")
+  apEmail    String   @default("")
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  contacts   Person[]
+  quotes     Quote[]
+}
+
+model Person {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  cell      String   @default("")
+  office    String   @default("")
+  email     String   @default("")
+  position  String   @default("")
+  isPrimary Boolean  @default(false)
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Quote {
+  id             String           @id @default(cuid())
+  quoteNumber    String           @unique
+  companyId      String?
+  company        Company?         @relation(fields: [companyId], references: [id])
+  projectName    String           @default("")
+  address        String           @default("")
+  location       String           @default("")
+  buildingType   String           @default("")
+  contactMethod  String           @default("Email")
+  contactDate    DateTime?
+  followUpDate   DateTime?
+  finalDate      DateTime?
+  authorName     String           @default("")
+  status         String           @default("Draft")
+  notes          String           @default("")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  items          QuoteItem[]
+  checklistItems QuoteChecklist[]
+}
+
+model QuoteItem {
+  id               String  @id @default(cuid())
+  quoteId          String
+  quote            Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  sortOrder        Int     @default(0)
+  itemType         String  @default("Item")
+  jobType          String  @default("")
+  squareFootage    Float   @default(0)
+  floors           String  @default("")
+  levels           Int     @default(1)
+  mobs             Int     @default(1)
+  pouringOn        String  @default("")
+  product1         String  @default("")
+  product2         String  @default("")
+  avgThickness     String  @default("")
+  strengthPsi      Int     @default(2500)
+  projectCost      Float   @default(0)
+  notes            String  @default("")
+  estimateProduct1 String  @default("")
+  estimateQty1     Float   @default(0)
+  estimateProduct2 String  @default("")
+  estimateQty2     Float   @default(0)
+  excludeSqFt      Boolean @default(false)
+}
+
+model QuoteChecklist {
+  id        String  @id @default(cuid())
+  quoteId   String
+  quote     Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  section   String
+  text      String
+  checked   Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model PurchaseOrder {
+  id           String    @id @default(cuid())
+  poNumber     Int       @unique
+  quantity     Int
+  product      String
+  fob          String    @default("")
+  orderedBy    String    @default("")
+  orderDate    DateTime?
+  shipDate     DateTime?
+  deliveryDate DateTime?
+  dateReceived DateTime?
+  shipVia      String    @default("")
+  status       String    @default("Open")
+  notes        String    @default("")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model InventoryProduct {
+  id           String                 @id @default(cuid())
+  name         String                 @unique
+  quantity     Int                    @default(0)
+  onJobSite    Int                    @default(0)
+  onOrder      Int                    @default(0)
+  sortOrder    Int                    @default(0)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+  transactions InventoryTransaction[]
+}
+
+model InventoryTransaction {
+  id        String           @id @default(cuid())
+  productId String
+  product   InventoryProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      String
+  quantity  Int
+  reference String           @default("")
+  notes     String           @default("")
+  date      DateTime         @default(now())
+  createdBy String           @default("")
+  createdAt DateTime         @default(now())
+}
