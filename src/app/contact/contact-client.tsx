@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Plus, Search, Edit2, Trash2, Users, Mail, X, Check } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Plus, Search, Edit2, Trash2, Users, Mail, X, Check, Upload } from "lucide-react";
 
 interface Person {
   id: string;
@@ -57,6 +57,7 @@ export function ContactClient() {
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [addingPerson, setAddingPerson] = useState(false);
   const [saving, setSaving] = useState(false);
+  const logoFileRef = useRef<HTMLInputElement>(null);
 
   const limit = 10;
 
@@ -96,6 +97,15 @@ export function ContactClient() {
   function openEdit(c: Company) {
     setForm({ ...c });
     setModal(c);
+  }
+
+  function handleLogoFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500_000) { alert("Logo must be under 500 KB"); return; }
+    const reader = new FileReader();
+    reader.onload = () => setForm(f => ({ ...f, logo: reader.result as string }));
+    reader.readAsDataURL(file);
   }
 
   async function saveCompany() {
@@ -291,6 +301,39 @@ export function ContactClient() {
               <button onClick={() => setModal(null)}><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4">
+              {/* Logo upload */}
+              <div className="flex items-center gap-4">
+                <div
+                  onClick={() => logoFileRef.current?.click()}
+                  className="w-24 h-16 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors overflow-hidden relative group flex-shrink-0"
+                >
+                  {form.logo ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={form.logo} alt="Logo" className="max-w-full max-h-full object-contain p-1" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span className="text-white text-xs font-medium">Change</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center text-gray-400">
+                      <Upload size={16} className="mx-auto mb-0.5" />
+                      <span className="text-xs">Logo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>Click to upload company logo</p>
+                  <p>PNG, JPG · max 500 KB</p>
+                  {form.logo && (
+                    <button onClick={() => setForm(f => ({ ...f, logo: "" }))} className="text-red-400 hover:text-red-600 flex items-center gap-1">
+                      <X size={11} /> Remove logo
+                    </button>
+                  )}
+                </div>
+                <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFile} />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
