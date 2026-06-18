@@ -194,7 +194,7 @@ export function ContactClient() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left w-20"></th>
+                  <th className="px-4 py-3 text-left w-16"></th>
                   <th className="px-4 py-3 text-left">Company</th>
                   <th className="px-4 py-3 text-left hidden md:table-cell">Primary Contact</th>
                   <th className="px-4 py-3 text-left hidden lg:table-cell">Phone</th>
@@ -215,9 +215,9 @@ export function ContactClient() {
                       <td className="px-4 py-3">
                         {c.logo ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={c.logo} alt={c.name} className="w-14 h-14 rounded-lg object-contain bg-white border border-gray-100 p-0.5" />
+                          <img src={c.logo} alt={c.name} className="w-11 h-11 rounded-lg object-contain bg-white border border-gray-100 p-0.5" />
                         ) : (
-                          <div className="w-14 h-14 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600 border border-orange-200">
+                          <div className="w-11 h-11 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-600 border border-orange-200">
                             {initials(c.name)}
                           </div>
                         )}
