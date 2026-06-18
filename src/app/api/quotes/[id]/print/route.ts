@@ -61,8 +61,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     ? quoteContacts
     : (quote.company?.contacts?.filter((c: { isPrimary: boolean }) => c.isPrimary).slice(0, 1) || []);
 
-  const totalCost = quote.items.reduce((s, i) => s + i.projectCost, 0);
-
   const checklistBySection: Record<string, typeof quote.checklistItems> = {};
   for (const item of quote.checklistItems) {
     if (!checklistBySection[item.section]) checklistBySection[item.section] = [];
@@ -70,9 +68,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // ── item blocks ──────────────────────────────────────────────────────────
-  const TH = `background:${HDR};color:#fff;font-size:7.5pt;font-weight:600;text-transform:uppercase;padding:5px 8px;text-align:left;letter-spacing:0.3px`;
+  const TH = `background:${HDR};color:#fff;font-size:8pt;font-weight:600;text-transform:uppercase;padding:7px 10px;text-align:left;letter-spacing:0.3px`;
   const TH_R = `${TH};text-align:right`;
-  const TD = `background:${HDRLT};border:1px solid ${BORD};font-size:8.5pt;padding:5px 8px;vertical-align:middle`;
+  const TD = `background:${HDRLT};border:1px solid ${BORD};font-size:9.5pt;padding:7px 10px;vertical-align:middle`;
   const TD_R = `${TD};text-align:right;font-weight:700`;
 
   const itemBlocks = quote.items.map((item, i) => {
@@ -217,17 +215,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <!-- ITEMS -->
   ${itemBlocks}
 
-  <!-- TOTAL -->
-  ${totalCost > 0 ? `
-  <table style="width:100%;border-collapse:collapse;margin:12px 0 20px">
-    <tr>
-      <td></td>
-      <td style="width:260px;border:2px solid #444;padding:10px 18px;text-align:center">
-        <div style="font-size:7.5pt;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Total Project Cost</div>
-        <div style="font-size:17pt;font-weight:800;color:#222">$${totalCost.toLocaleString()} + hst</div>
-      </td>
-    </tr>
-  </table>` : ""}
 
   <!-- CHECKLIST -->
   ${checklistSections}
