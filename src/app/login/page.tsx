@@ -23,7 +23,7 @@ async function loginAction(formData: FormData) {
   session.isLoggedIn = true;
   session.role = role as "office" | "crew";
   await session.save();
-  redirect("/calendar");
+  redirect(role === "office" ? "/quotes" : "/calendar");
 }
 
 export default async function LoginPage({
@@ -32,7 +32,7 @@ export default async function LoginPage({
   searchParams: Promise<{ role?: string; error?: string }>;
 }) {
   const session = await getSession();
-  if (session.isLoggedIn) redirect("/calendar");
+  if (session.isLoggedIn) redirect(session.role === "office" ? "/quotes" : "/calendar");
 
   const params = await searchParams;
   const selectedRole = params.role || "";

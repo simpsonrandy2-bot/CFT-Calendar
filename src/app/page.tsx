@@ -6,5 +6,5 @@ export default async function Home() {
   if (!session.isLoggedIn) {
     redirect("/login");
   }
-  redirect("/calendar");
+  redirect(session.role === "office" ? "/quotes" : "/calendar");
 }
