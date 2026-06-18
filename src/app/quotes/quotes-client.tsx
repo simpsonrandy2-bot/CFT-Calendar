@@ -39,6 +39,12 @@ interface Company {
   id: string;
   name: string;
   logo?: string;
+  address?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  phone?: string;
+  email?: string;
   contacts?: { id: string; name: string; email: string; cell: string; isPrimary: boolean }[];
 }
 
@@ -468,12 +474,23 @@ export function QuotesClient() {
                         {filtered.map(c => (
                           <li key={c.id}
                             onMouseDown={() => {
-                              setForm(f => ({ ...f, companyId: c.id }));
+                              const primary = c.contacts?.find(ct => ct.isPrimary) ?? c.contacts?.[0];
+                              const addressParts = [c.address, c.city, c.province, c.postalCode].filter(Boolean);
+                              setForm(f => ({
+                                ...f,
+                                companyId: c.id,
+                                address: addressParts.join(", ") || f.address,
+                                location: c.city || f.location,
+                                contactMethod: f.contactMethod || "Email",
+                              }));
                               setCompanySearch(c.name);
                               setCompanyOpen(false);
                             }}
                             className="px-3 py-2 text-sm cursor-pointer hover:bg-orange-50 hover:text-orange-700"
-                          >{c.name}</li>
+                          >
+                            <div className="font-medium">{c.name}</div>
+                            {(c.city || c.province) && <div className="text-xs text-gray-400">{[c.city, c.province].filter(Boolean).join(", ")}</div>}
+                          </li>
                         ))}
                       </ul>
                     );
