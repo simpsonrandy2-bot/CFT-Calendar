@@ -116,15 +116,18 @@ export async function POST(request: NextRequest) {
 
   const data = await request.json();
 
-  // Try to find a template matching the requested product/template name
+  // Auto-detect template from first item's product1, fall back to "Default", then hardcoded defaults
   let checklistItems = DEFAULT_CHECKLIST;
-  if (data.templateName) {
+  const firstProduct = data.items?.[0]?.product1;
+  const templateNames = firstProduct ? [firstProduct, "Default"] : ["Default"];
+  for (const name of templateNames) {
     const template = await prisma.checklistTemplate.findUnique({
-      where: { name: data.templateName },
+      where: { name },
       include: { items: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }] } },
     });
     if (template && template.items.length > 0) {
-      checklistItems = template.items.map(({ section, text, checked, sortOrder }) => ({ section, text, checked, sortOrder }));
+      checklistItems = template.items.map(({ section, text, checked, sortOrder }: { section: string; text: string; checked: boolean; sortOrder: number }) => ({ section, text, checked, sortOrder }));
+      break;
     }
   }
 

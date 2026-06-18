@@ -109,7 +109,7 @@ export function QuotesClient() {
   const [calModal, setCalModal] = useState<Quote | null>(null);
   const [pourDate, setPourDate] = useState("");
   const [scheduled, setScheduled] = useState<Set<string>>(new Set());
-  const [templateName, setTemplateName] = useState("Default");
+  const [newChecklistText, setNewChecklistText] = useState<Record<string, string>>({});
 
   const limit = 25;
 
@@ -154,7 +154,7 @@ export function QuotesClient() {
     const isNew = modal === "new";
     const url = isNew ? "/api/quotes" : `/api/quotes/${(modal as Quote).id}`;
     const method = isNew ? "POST" : "PUT";
-    const body = isNew ? { ...form, checklistItems, templateName } : { ...form, checklistItems };
+    const body = { ...form, checklistItems };
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
       await fetchQuotes();
@@ -220,6 +220,19 @@ export function QuotesClient() {
 
   function toggleChecklist(id: string) {
     setChecklistItems(items => items.map(ci => ci.id === id ? { ...ci, checked: !ci.checked } : ci));
+  }
+
+  function deleteChecklistItem(id: string) {
+    setChecklistItems(items => items.filter(ci => ci.id !== id));
+  }
+
+  function addChecklistItem(section: string) {
+    const text = newChecklistText[section]?.trim();
+    if (!text) return;
+    const sectionItems = checklistItems.filter(ci => ci.section === section);
+    const tempId = `new-${Date.now()}-${Math.random()}`;
+    setChecklistItems(items => [...items, { id: tempId, section, text, checked: true, sortOrder: sectionItems.length }]);
+    setNewChecklistText(prev => ({ ...prev, [section]: "" }));
   }
 
   const pendingCount = stats.find(s => s.status === "Pending")?._count ?? 0;
@@ -410,23 +423,6 @@ export function QuotesClient() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Template selector — new quotes only */}
-              {modal === "new" && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-                  <label className="block text-sm font-semibold text-orange-800 mb-2">Checklist Template (Product Type)</label>
-                  <select
-                    value={templateName}
-                    onChange={e => setTemplateName(e.target.value)}
-                    className="w-full border border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
-                  >
-                    {["Default","LR 2500","LR 3500","LR 4500","LR3500 FR","Maxxon Gyp-Crete High Performance","Maxxon MF","Maxxon Commercial Pro Level-Crete","EXP Topping","Quik-Top"].map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-orange-600 mt-1">The checklist will auto-populate with the saved defaults for this product.</p>
-                </div>
-              )}
-
               {/* Company & Date */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -616,24 +612,48 @@ export function QuotesClient() {
                   <h3 className="font-semibold text-gray-800 mb-3">Quote Details</h3>
                   {SECTIONS.map(section => {
                     const items = checklistItems.filter(ci => ci.section === section);
-                    if (items.length === 0) return null;
+                    if (items.length === 0 && readOnly) return null;
                     const isOpen = activeSection === section;
                     return (
                       <div key={section} className="mb-2 border border-gray-200 rounded-lg overflow-hidden">
                         <button onClick={() => setActiveSection(isOpen ? null : section)}
                           className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 text-left text-sm font-semibold text-gray-800 hover:bg-gray-100">
                           <span>{SECTION_LABELS[section]}</span>
-                          <ChevronDown size={16} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-normal text-gray-400">{items.filter(i => i.checked).length}/{items.length}</span>
+                            <ChevronDown size={16} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                          </div>
                         </button>
                         {isOpen && (
-                          <div className="p-4 space-y-2">
+                          <div className="p-4 space-y-1">
                             {items.map(ci => (
-                              <label key={ci.id} className="flex items-start gap-3 text-sm cursor-pointer">
+                              <div key={ci.id} className="flex items-start gap-2 group py-0.5">
                                 <input type="checkbox" checked={ci.checked} onChange={() => toggleChecklist(ci.id)}
-                                  className="mt-0.5 flex-shrink-0" />
-                                <span className={ci.checked ? "text-gray-800" : "text-gray-400"}>{ci.text}</span>
-                              </label>
+                                  className="mt-0.5 flex-shrink-0 accent-orange-500 cursor-pointer" />
+                                <span className={`flex-1 text-sm ${ci.checked ? "text-gray-800" : "text-gray-400"}`}>{ci.text}</span>
+                                {!readOnly && (
+                                  <button onClick={() => deleteChecklistItem(ci.id)}
+                                    className="p-0.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 flex-shrink-0">
+                                    <Trash2 size={12} />
+                                  </button>
+                                )}
+                              </div>
                             ))}
+                            {!readOnly && (
+                              <div className="flex gap-2 mt-3 pt-2 border-t border-gray-100">
+                                <input
+                                  value={newChecklistText[section] || ""}
+                                  onChange={e => setNewChecklistText(prev => ({ ...prev, [section]: e.target.value }))}
+                                  onKeyDown={e => e.key === "Enter" && addChecklistItem(section)}
+                                  placeholder="Add item…"
+                                  className="flex-1 border border-gray-200 rounded px-2.5 py-1.5 text-sm focus:outline-none focus:border-orange-400"
+                                />
+                                <button onClick={() => addChecklistItem(section)}
+                                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium text-gray-600">
+                                  Add
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
