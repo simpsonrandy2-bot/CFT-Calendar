@@ -481,13 +481,9 @@ export function QuotesClient() {
                           <li key={c.id}
                             onMouseDown={() => {
                               const primary = c.contacts?.find(ct => ct.isPrimary) ?? c.contacts?.[0];
-                              const addressParts = [c.address, c.city, c.province, c.postalCode].filter(Boolean);
                               setForm(f => ({
                                 ...f,
                                 companyId: c.id,
-                                address: addressParts.join(", ") || f.address,
-                                location: c.city || f.location,
-                                contactMethod: f.contactMethod || "Email",
                               }));
                               if (primary) setSelectedPersonIds(new Set([primary.id]));
                               setCompanySearch(c.name);
@@ -514,8 +510,6 @@ export function QuotesClient() {
               {(() => {
                 const selectedCompany = companies.find(c => c.id === form.companyId);
                 const allContacts = selectedCompany?.contacts || [];
-                const selectedContacts = allContacts.filter(ct => selectedPersonIds.has(ct.id));
-                const unselectedContacts = allContacts.filter(ct => !selectedPersonIds.has(ct.id));
                 return (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -531,42 +525,47 @@ export function QuotesClient() {
                       )}
                     </div>
 
-                    {/* Picker dropdown */}
-                    {contactPickerOpen && unselectedContacts.length > 0 && (
+                    {/* All-contacts picker — shown when + is clicked */}
+                    {contactPickerOpen && allContacts.length > 0 && (
                       <div className="mb-2 border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
-                        {unselectedContacts.map(ct => (
-                          <div key={ct.id}
-                            onClick={() => {
-                              setSelectedPersonIds(prev => new Set([...prev, ct.id]));
-                              if (unselectedContacts.length === 1) setContactPickerOpen(false);
-                            }}
-                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-orange-50 border-b border-gray-100 last:border-0">
-                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                              {ct.name.slice(0, 2).toUpperCase()}
+                        {allContacts.map((ct, i) => {
+                          const checked = selectedPersonIds.has(ct.id);
+                          return (
+                            <div key={ct.id}
+                              onClick={() => setSelectedPersonIds(prev => {
+                                const n = new Set(prev);
+                                if (n.has(ct.id)) n.delete(ct.id); else n.add(ct.id);
+                                return n;
+                              })}
+                              className={`flex items-center gap-3 px-3 py-2 cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${checked ? "bg-orange-50" : "hover:bg-gray-50"}`}>
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${checked ? "bg-orange-500 border-orange-500" : "border-gray-300"}`}>
+                                {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              </div>
+                              <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
+                                {ct.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-900">{ct.name}{ct.isPrimary && <span className="ml-1.5 text-xs text-orange-500">Primary</span>}</div>
+                                <div className="text-xs text-gray-400 truncate">{[ct.position, ct.email, ct.cell].filter(Boolean).join(" · ")}</div>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-gray-900">{ct.name}{ct.isPrimary && <span className="ml-1.5 text-xs text-orange-500">Primary</span>}</div>
-                              <div className="text-xs text-gray-400 truncate">{[ct.position, ct.email].filter(Boolean).join(" · ")}</div>
-                            </div>
-                            <Plus size={14} className="text-gray-400 flex-shrink-0" />
-                          </div>
-                        ))}
+                          );
+                        })}
+                        <div className="px-3 py-2 bg-gray-50 flex justify-end">
+                          <button type="button" onClick={() => setContactPickerOpen(false)}
+                            className="text-xs font-medium text-gray-600 hover:text-orange-600">Done</button>
+                        </div>
                       </div>
                     )}
 
-                    {/* Selected contacts */}
-                    {selectedContacts.length > 0 && (
+                    {/* Selected contacts display */}
+                    {allContacts.filter(ct => selectedPersonIds.has(ct.id)).length > 0 && !contactPickerOpen && (
                       <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        {selectedContacts.map((ct, i) => (
+                        {allContacts.filter(ct => selectedPersonIds.has(ct.id)).map((ct, i) => (
                           <div key={ct.id} className={`flex items-center gap-2 px-3 py-2 text-sm ${i > 0 ? "border-t border-gray-100" : ""}`}>
                             <span className="flex-1 font-medium text-gray-900 truncate">{ct.name}</span>
                             <span className="flex-1 text-gray-500 truncate hidden sm:block">{ct.email}</span>
                             <span className="w-32 text-gray-500 truncate hidden md:block">{ct.cell}</span>
-                            {ct.isPrimary && (
-                              <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0" title="Primary">
-                                <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                              </div>
-                            )}
                             {!readOnly && (
                               <button type="button"
                                 onClick={() => setSelectedPersonIds(prev => { const n = new Set(prev); n.delete(ct.id); return n; })}
