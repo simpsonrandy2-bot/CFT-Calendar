@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Plus, Search, Edit2, Trash2, ThumbsUp, ThumbsDown, X, ChevronDown, FileText, CalendarDays } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, ThumbsUp, ThumbsDown, X, FileText, CalendarDays } from "lucide-react";
 
 interface QuoteItem {
   id?: string;
@@ -113,7 +113,6 @@ export function QuotesClient() {
   const [checklistItems, setChecklistItems] = useState<QuoteChecklist[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [saving, setSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [calModal, setCalModal] = useState<Quote | null>(null);
   const [pourDate, setPourDate] = useState("");
   const [scheduled, setScheduled] = useState<Set<string>>(new Set());
@@ -761,19 +760,13 @@ export function QuotesClient() {
                   {SECTIONS.map(section => {
                     const items = checklistItems.filter(ci => ci.section === section);
                     if (items.length === 0 && readOnly) return null;
-                    const isOpen = activeSection === section;
                     return (
                       <div key={section} className="mb-2 border border-gray-200 rounded-lg overflow-hidden">
-                        <button onClick={() => setActiveSection(isOpen ? null : section)}
-                          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 text-left text-sm font-semibold text-gray-800 hover:bg-gray-100">
+                        <div className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 text-sm font-semibold text-gray-800">
                           <span>{SECTION_LABELS[section]}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-normal text-gray-400">{items.filter(i => i.checked).length}/{items.length}</span>
-                            <ChevronDown size={16} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                          </div>
-                        </button>
-                        {isOpen && (
-                          <div className="p-4 space-y-1">
+                          <span className="text-xs font-normal text-gray-400">{items.filter(i => i.checked).length}/{items.length}</span>
+                        </div>
+                        <div className="p-4 space-y-1">
                             {items.map(ci => (
                               <div key={ci.id} className="flex items-start gap-2 group py-0.5">
                                 <input type="checkbox" checked={ci.checked} onChange={() => toggleChecklist(ci.id)}
@@ -803,7 +796,6 @@ export function QuotesClient() {
                               </div>
                             )}
                           </div>
-                        )}
                       </div>
                     );
                   })}
