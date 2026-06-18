@@ -52,7 +52,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const clientAddress = [quote.company?.address, quote.company?.city, quote.company?.province].filter(Boolean).join(", ");
   const clientPhone = quote.company?.phone || "";
 
-  // Selected contacts for this quote, falling back to primary company contact
   const quoteContacts = (quote.quoteContacts || []).map((qc: { person: { name: string; cell: string; office: string; email: string; position: string } }) => qc.person);
   const displayContacts = quoteContacts.length > 0
     ? quoteContacts
@@ -66,188 +65,182 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     checklistBySection[item.section].push(item);
   }
 
-  // Each item gets its own structured block like production
+  const TH = `padding:5px 10px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7pt;letter-spacing:0.3px`;
+  const TD = `padding:6px 10px;border:1px solid #dde3ea;font-size:8.5pt`;
+
   const itemBlocks = quote.items.map((item, i) => `
-    <div style="margin-bottom:20px;break-inside:avoid">
-      <div style="font-weight:700;font-size:9.5pt;margin-bottom:6px;color:#111">ITEM NO. ${i + 1}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:8.5pt">
-        <thead>
-          <tr style="background:${ACCENT};color:white">
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Job Type</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Building Type</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Sq Ft</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background:#f8fafc">
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.jobType)}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(quote.buildingType)}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${item.excludeSqFt ? "—" : item.squareFootage.toLocaleString()}</td>
-          </tr>
-        </tbody>
-        <thead>
-          <tr style="background:${ACCENT};color:white">
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Product(s)</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Strength</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Thickness</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Mobilizations</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background:#f8fafc">
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc([item.product1, item.product2].filter(Boolean).join(", "))}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.strengthPsi ? `${item.strengthPsi} psi` : "")}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.avgThickness ? `Avg. ${item.avgThickness}` : "")}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${item.mobs > 0 ? item.mobs : ""}</td>
-          </tr>
-        </tbody>
-        <thead>
-          <tr style="background:${ACCENT};color:white">
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Pouring On</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Floors</th>
-            <th style="padding:5px 8px;text-align:left;font-weight:600;text-transform:uppercase;font-size:7.5pt">Levels</th>
-            <th style="padding:5px 8px;text-align:right;font-weight:600;text-transform:uppercase;font-size:7.5pt">Lump Sum Price</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background:#f8fafc">
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.pouringOn)}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${esc(item.floors)}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0">${item.levels > 0 ? item.levels : ""}</td>
-            <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right;font-weight:700;color:${ACCENT}">$${item.projectCost.toLocaleString()} + hst${item.squareFootage > 0 && !item.excludeSqFt ? ` ($${(item.projectCost / item.squareFootage).toFixed(2)}/ sq ft)` : ""}</td>
-          </tr>
-        </tbody>
+    <div style="margin-bottom:18px;page-break-inside:avoid">
+      <div style="font-weight:700;font-size:9pt;margin-bottom:5px;color:#111;text-transform:uppercase;letter-spacing:0.5px">Item No. ${i + 1}</div>
+      <table style="width:100%;border-collapse:collapse">
+        <tr style="background:${ACCENT};color:#fff">
+          <th style="${TH};width:28%">Job Type</th>
+          <th style="${TH};width:36%">Building Type</th>
+          <th style="${TH};width:36%">Sq Ft</th>
+        </tr>
+        <tr style="background:#f5f7fa">
+          <td style="${TD}">${esc(item.jobType)}</td>
+          <td style="${TD}">${esc(quote.buildingType)}</td>
+          <td style="${TD}">${item.excludeSqFt ? "—" : item.squareFootage.toLocaleString()}</td>
+        </tr>
+        <tr style="background:${ACCENT};color:#fff">
+          <th style="${TH}">Product(s)</th>
+          <th style="${TH}">Strength</th>
+          <th style="${TH}">Thickness</th>
+          <th style="${TH}">Mobilizations</th>
+        </tr>
+        <tr style="background:#f5f7fa">
+          <td style="${TD}">${esc([item.product1, item.product2].filter(Boolean).join(", "))}</td>
+          <td style="${TD}">${esc(item.strengthPsi ? `${item.strengthPsi} psi` : "")}</td>
+          <td style="${TD}">${esc(item.avgThickness ? `Avg. ${item.avgThickness}` : "")}</td>
+          <td style="${TD}">${item.mobs > 0 ? item.mobs : ""}</td>
+        </tr>
+        <tr style="background:${ACCENT};color:#fff">
+          <th style="${TH}">Pouring On</th>
+          <th style="${TH}">Floors</th>
+          <th style="${TH}">Levels</th>
+          <th style="${TH};text-align:right">Lump Sum Price</th>
+        </tr>
+        <tr style="background:#f5f7fa">
+          <td style="${TD}">${esc(item.pouringOn)}</td>
+          <td style="${TD}">${esc(item.floors)}</td>
+          <td style="${TD}">${item.levels > 0 ? item.levels : ""}</td>
+          <td style="${TD};text-align:right;font-weight:700;color:${ACCENT}">$${item.projectCost.toLocaleString()} + hst${item.squareFootage > 0 && !item.excludeSqFt ? `&nbsp;&nbsp;($${(item.projectCost / item.squareFootage).toFixed(2)}/&nbsp;sq ft)` : ""}</td>
+        </tr>
       </table>
-      ${item.notes ? `<div style="font-size:8.5pt;margin-top:6px;color:#374151"><strong>Notes:</strong> <span style="white-space:pre-wrap">${esc(item.notes)}</span></div>` : ""}
+      ${item.notes ? `<div style="font-size:8.5pt;margin-top:5px;color:#374151"><strong>Notes:</strong>&nbsp;<span style="white-space:pre-wrap">${esc(item.notes)}</span></div>` : ""}
     </div>`).join("");
 
-  const checklistSections = SECTION_ORDER
-    .map(section => {
-      const checkedItems = (checklistBySection[section] || []).filter(item => item.checked);
-      if (!checkedItems.length) return "";
-      const items = checkedItems.map(item => `
-        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:3px;font-size:8.5pt">
-          <div style="width:11px;height:11px;border:1.5px solid ${ACCENT};border-radius:2px;flex-shrink:0;margin-top:1px;background:${ACCENT};display:flex;align-items:center;justify-content:center">
-            <span style="color:white;font-size:7pt;font-weight:900;line-height:1">✓</span>
+  const checklistSections = SECTION_ORDER.map(section => {
+    const checkedItems = (checklistBySection[section] || []).filter(item => item.checked);
+    if (!checkedItems.length) return "";
+    const rows = checkedItems.map(item => `
+      <tr>
+        <td style="width:18px;vertical-align:top;padding:1px 6px 4px 0">
+          <div style="width:12px;height:12px;background:${ACCENT};border-radius:2px;display:flex;align-items:center;justify-content:center;margin-top:1px">
+            <span style="color:white;font-size:8pt;line-height:1;font-weight:900">&#10003;</span>
           </div>
-          <span style="color:#111">${esc(item.text)}</span>
-        </div>`).join("");
-      return `
-        <div style="margin-bottom:14px;break-inside:avoid">
-          <h4 style="font-size:9pt;font-weight:700;color:${ACCENT};border-bottom:2px solid ${ACCENT};padding-bottom:4px;margin-bottom:6px">${esc(SECTION_LABELS[section])}</h4>
-          ${items}
-        </div>`;
-    }).join("");
+        </td>
+        <td style="font-size:8.5pt;color:#111;padding-bottom:4px">${esc(item.text)}</td>
+      </tr>`).join("");
+    return `
+      <div style="margin-bottom:14px;page-break-inside:avoid">
+        <div style="font-size:9pt;font-weight:700;color:${ACCENT};border-bottom:2px solid ${ACCENT};padding-bottom:3px;margin-bottom:6px">${esc(SECTION_LABELS[section])}</div>
+        <table style="border-collapse:collapse;width:100%">${rows}</table>
+      </div>`;
+  }).join("");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Quote ${esc(quote.quoteNumber)} — ${esc(clientName || quote.projectName)}</title>
   <style>
     @page { margin: 0.75in; size: letter; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #111; background: white; }
-    @media print {
-      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-    }
+    body { font-family: Arial, Helvetica, sans-serif; color: #111; background: white; }
+    @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
     @media screen {
-      body { background: #e5e7eb; }
-      .page { max-width: 8.5in; margin: 0 auto; background: white; padding: 0.75in; box-shadow: 0 4px 24px rgba(0,0,0,0.15); min-height: 100vh; }
+      body { background: #d1d5db; }
+      .page { max-width: 8.5in; margin: 0 auto; background: white; padding: 0.75in; box-shadow: 0 4px 32px rgba(0,0,0,0.18); min-height: 11in; }
     }
   </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Header: logo left | date/quotation right -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid ${ACCENT}">
-    <!-- Left: company logo (the logo image itself contains company name/tagline in production) -->
-    <div>
-      ${logoData
-        ? `<img src="${logoData}" alt="Logo" style="max-height:100px;max-width:280px;object-fit:contain;display:block" />`
-        : `<div style="display:flex;align-items:center;gap:10px">
-            <div style="font-size:32pt;font-weight:900;color:${ACCENT};letter-spacing:-1px">CFT</div>
-            <div>
-              <div style="font-size:13pt;font-weight:800;color:${ACCENT}">${esc(coName)}</div>
-              ${coTagline ? `<div style="font-size:8pt;color:#555;text-transform:uppercase;letter-spacing:0.5px">${esc(coTagline)}</div>` : ""}
-              ${coPhone ? `<div style="font-size:7.5pt;color:#555;margin-top:2px">${esc(coPhone)}</div>` : ""}
-              ${coEmail ? `<div style="font-size:7.5pt;color:#555">${esc(coEmail)}</div>` : ""}
-            </div>
-          </div>`
-      }
-    </div>
-    <!-- Right: date/quote# + large Quotation heading -->
-    <div style="text-align:right;min-width:200px">
-      <div style="margin-bottom:10px">
-        <span style="font-size:8.5pt;color:#555">Date&nbsp;&nbsp;</span><span style="font-size:9pt;font-weight:600">${fmtDate(quote.createdAt)}</span><br/>
-        <span style="font-size:8.5pt;color:#555">Quote No&nbsp;&nbsp;</span><span style="font-size:9pt;font-weight:600">${esc(quote.quoteNumber)}</span>
-      </div>
-      <div style="font-size:38pt;font-weight:300;color:#333;letter-spacing:-1px;line-height:1;border-bottom:2px solid ${ACCENT};padding-bottom:4px">Quotation</div>
-      ${quote.authorName ? `<div style="font-size:7.5pt;color:#888;margin-top:5px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
-    </div>
-  </div>
-
-  <!-- Client & Project side by side -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px">
-
-    <!-- Client -->
-    <div>
-      ${clientLogo ? `<img src="${clientLogo}" alt="${esc(clientName)}" style="max-height:64px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block" />` : ""}
-      ${clientName ? `<div style="font-size:14pt;font-weight:800;text-transform:uppercase;color:#111;margin-bottom:4px">${esc(clientName)}</div>` : ""}
-      ${clientAddress ? `<div style="font-size:9pt;color:#444;margin-bottom:2px">${esc(clientAddress)}</div>` : ""}
-      ${clientPhone ? `<div style="font-size:9pt;color:#444">${esc(clientPhone)}</div>` : ""}
-    </div>
-
-    <!-- Project & Contacts -->
-    <div>
-      ${quote.projectName ? `<div style="font-size:14pt;font-weight:800;text-transform:uppercase;color:#111;margin-bottom:6px">${esc(quote.projectName)}</div>` : ""}
-      ${quote.address ? `<div style="font-size:9pt;color:#444;margin-bottom:2px">${esc(quote.address)}</div>` : ""}
-      ${quote.location ? `<div style="font-size:9pt;color:#444;margin-bottom:8px">${esc(quote.location)}</div>` : ""}
-      ${displayContacts.map((ct: { name: string; cell: string; office: string; email: string }) => `
-        <div style="margin-bottom:2px">
-          <span style="font-size:9pt;font-weight:600">${esc(ct.name)}</span>
-          ${ct.cell ? `<span style="font-size:9pt;color:#444;margin-left:12px">${esc(ct.cell)}</span>` : ""}
+  <!-- ═══ HEADER ═══ -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:0">
+    <tr>
+      <td style="vertical-align:bottom;padding-bottom:12px;width:55%">
+        ${logoData
+          ? `<img src="${logoData}" alt="Logo" style="max-height:90px;max-width:260px;object-fit:contain;display:block"/>`
+          : `<table style="border-collapse:collapse"><tr>
+               <td style="font-size:36pt;font-weight:900;color:${ACCENT};line-height:1;padding-right:10px">CFT</td>
+               <td style="vertical-align:middle">
+                 <div style="font-size:13pt;font-weight:800;color:${ACCENT}">${esc(coName)}</div>
+                 ${coTagline ? `<div style="font-size:8pt;color:#555;text-transform:uppercase;letter-spacing:0.5px">${esc(coTagline)}</div>` : ""}
+                 ${coPhone ? `<div style="font-size:8pt;color:#555;margin-top:2px">${esc(coPhone)}</div>` : ""}
+                 ${coEmail ? `<div style="font-size:8pt;color:#555">${esc(coEmail)}</div>` : ""}
+               </td>
+             </tr></table>`
+        }
+      </td>
+      <td style="vertical-align:bottom;text-align:right;padding-bottom:12px">
+        <div style="font-size:8pt;color:#555;margin-bottom:2px">
+          <span style="display:inline-block;min-width:55px;text-align:right">Date</span>
+          <span style="font-size:9pt;font-weight:600;color:#111;margin-left:12px">${fmtDate(quote.createdAt)}</span>
         </div>
-        ${ct.email ? `<div style="font-size:8.5pt;color:#444">${esc(ct.email)}</div>` : ""}
-      `).join("")}
-      ${quote.contactMethod || quote.contactDate ? `
-        <div style="font-size:8.5pt;color:#555;margin-top:6px">
-          Specifications: ${esc(quote.contactMethod)}${quote.contactDate ? ` ${fmtDate(quote.contactDate)}` : ""}
-        </div>` : ""}
-    </div>
-  </div>
+        <div style="font-size:8pt;color:#555;margin-bottom:10px">
+          <span style="display:inline-block;min-width:55px;text-align:right">Quote No</span>
+          <span style="font-size:9pt;font-weight:600;color:#111;margin-left:12px">${esc(quote.quoteNumber)}</span>
+        </div>
+        <div style="font-size:34pt;font-weight:300;color:#333;letter-spacing:-1px;line-height:1;border-bottom:2px solid ${ACCENT};padding-bottom:5px">Quotation</div>
+        ${quote.authorName ? `<div style="font-size:7.5pt;color:#888;margin-top:4px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
+      </td>
+    </tr>
+  </table>
+  <div style="border-top:3px solid ${ACCENT};margin-bottom:20px"></div>
 
-  <!-- Intro paragraph -->
-  <p style="font-size:9pt;color:#333;margin-bottom:20px;font-style:italic">
+  <!-- ═══ CLIENT + PROJECT ═══ -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+    <tr>
+      <td style="width:48%;vertical-align:top;padding-right:20px">
+        ${clientLogo ? `<img src="${clientLogo}" alt="${esc(clientName)}" style="max-height:56px;max-width:150px;object-fit:contain;display:block;margin-bottom:6px"/>` : ""}
+        ${clientName ? `<div style="font-size:13pt;font-weight:800;text-transform:uppercase;color:#111;margin-bottom:3px">${esc(clientName)}</div>` : ""}
+        ${clientAddress ? `<div style="font-size:9pt;color:#444;line-height:1.5">${esc(clientAddress)}</div>` : ""}
+        ${clientPhone ? `<div style="font-size:9pt;color:#444">${esc(clientPhone)}</div>` : ""}
+      </td>
+      <td style="width:52%;vertical-align:top">
+        ${quote.projectName ? `<div style="font-size:13pt;font-weight:800;text-transform:uppercase;color:#111;margin-bottom:4px">${esc(quote.projectName)}</div>` : ""}
+        ${quote.address ? `<div style="font-size:9pt;color:#444;margin-bottom:1px">${esc(quote.address)}</div>` : ""}
+        ${quote.location ? `<div style="font-size:9pt;color:#444;margin-bottom:6px">${esc(quote.location)}</div>` : ""}
+        ${displayContacts.map((ct: { name: string; cell: string; office: string; email: string }) => `
+          <div style="margin-bottom:1px">
+            <span style="font-size:9pt;font-weight:600">${esc(ct.name)}</span>
+            ${ct.cell ? `<span style="font-size:9pt;color:#444;margin-left:14px">${esc(ct.cell)}</span>` : ""}
+          </div>
+          ${ct.email ? `<div style="font-size:8.5pt;color:#444;margin-bottom:4px">${esc(ct.email)}</div>` : ""}
+        `).join("")}
+        ${quote.contactMethod || quote.contactDate ? `
+          <div style="font-size:8.5pt;color:#555;margin-top:4px">
+            Specifications: ${esc(quote.contactMethod)}${quote.contactDate ? ` ${fmtDate(quote.contactDate)}` : ""}
+          </div>` : ""}
+      </td>
+    </tr>
+  </table>
+
+  <!-- ═══ INTRO ═══ -->
+  <p style="font-size:9pt;color:#333;margin-bottom:18px;font-style:italic;line-height:1.5">
     We hereby propose to provide all labour, equipment and material required to complete the application of self-leveling underlayment/topping at the cost as follows:
   </p>
 
-  <!-- Item blocks -->
+  <!-- ═══ ITEMS ═══ -->
   ${itemBlocks}
 
-  <!-- Total -->
-  ${quote.items.length > 0 && totalCost > 0 ? `
-  <div style="display:flex;justify-content:flex-end;margin:16px 0 24px">
-    <div style="border:2px solid ${ACCENT};border-radius:4px;padding:8px 20px;text-align:right;min-width:200px">
-      <div style="font-size:8pt;color:#666;text-transform:uppercase;letter-spacing:0.5px">Total Project Cost</div>
-      <div style="font-size:16pt;font-weight:800;color:${ACCENT}">$${totalCost.toLocaleString()} + hst</div>
-    </div>
-  </div>` : ""}
+  <!-- ═══ TOTAL ═══ -->
+  ${totalCost > 0 ? `
+  <table style="width:100%;border-collapse:collapse;margin:14px 0 22px">
+    <tr>
+      <td></td>
+      <td style="width:240px;border:2px solid ${ACCENT};border-radius:4px;padding:10px 18px;text-align:center">
+        <div style="font-size:7.5pt;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Total Project Cost</div>
+        <div style="font-size:18pt;font-weight:800;color:${ACCENT}">$${totalCost.toLocaleString()} + hst</div>
+      </td>
+    </tr>
+  </table>` : ""}
 
-  <!-- Checklist -->
+  <!-- ═══ CHECKLIST ═══ -->
   ${checklistSections}
 
-  <!-- Notes -->
+  <!-- ═══ NOTES ═══ -->
   ${quote.notes ? `
-  <div style="border-left:3px solid ${ACCENT};padding:10px 14px;margin-top:20px;background:#f8fafc">
-    <div style="font-size:8pt;font-weight:700;text-transform:uppercase;color:${ACCENT};letter-spacing:0.5px;margin-bottom:6px">Notes</div>
-    <p style="font-size:9pt;color:#374151;white-space:pre-wrap">${esc(quote.notes)}</p>
+  <div style="border-left:3px solid ${ACCENT};padding:10px 14px;margin-top:18px;background:#f5f7fa">
+    <div style="font-size:8pt;font-weight:700;text-transform:uppercase;color:${ACCENT};letter-spacing:0.5px;margin-bottom:5px">Notes</div>
+    <div style="font-size:9pt;color:#374151;white-space:pre-wrap;line-height:1.5">${esc(quote.notes)}</div>
   </div>` : ""}
 
-  <!-- Footer -->
-  <div style="margin-top:32px;padding-top:10px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;font-size:7.5pt;color:#9ca3af">
+  <!-- ═══ FOOTER ═══ -->
+  <div style="margin-top:30px;padding-top:8px;border-top:1px solid #dde3ea;display:flex;justify-content:space-between;font-size:7.5pt;color:#9ca3af">
     <span>${esc(coName)}</span>
     <span>Quote ${esc(quote.quoteNumber)}</span>
     <span>${new Date().toLocaleDateString("en-CA")}</span>
