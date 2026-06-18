@@ -31,39 +31,59 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Cannot edit a locked or finalized quote" }, { status: 400 });
   }
 
-  await prisma.quoteItem.deleteMany({ where: { quoteId: id } });
-  if (data.selectedPersonIds !== undefined) {
-    await prisma.quoteContact.deleteMany({ where: { quoteId: id } });
-    if (data.selectedPersonIds.length > 0) {
-      await prisma.quoteContact.createMany({
-        data: (data.selectedPersonIds as string[]).map((personId: string) => ({ quoteId: id, personId })),
-        skipDuplicates: true,
-      });
-    }
-  }
+  // Build clean item rows — strip any client-side id/quoteId so createMany works
+  const cleanItems = (data.items ?? []).map((item: Record<string, unknown>, i: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, quoteId: _qid, ...rest } = item;
+    return { ...rest, quoteId: id, sortOrder: i } as Record<string, unknown>;
+  });
 
-  const quote = await prisma.quote.update({
+  await prisma.$transaction(async (tx) => {
+    // 1. Replace items
+    await tx.quoteItem.deleteMany({ where: { quoteId: id } });
+    if (cleanItems.length > 0) {
+      await tx.quoteItem.createMany({ data: cleanItems as never[] });
+    }
+
+    // 2. Replace contacts
+    if (data.selectedPersonIds !== undefined) {
+      await tx.quoteContact.deleteMany({ where: { quoteId: id } });
+      if ((data.selectedPersonIds as string[]).length > 0) {
+        await tx.quoteContact.createMany({
+          data: (data.selectedPersonIds as string[]).map((personId: string) => ({ quoteId: id, personId })),
+          skipDuplicates: true,
+        });
+      }
+    }
+
+    // 3. Update checklist checked states
+    if (data.checklistItems) {
+      for (const ci of data.checklistItems as { id: string; checked: boolean }[]) {
+        await tx.quoteChecklist.updateMany({ where: { id: ci.id }, data: { checked: ci.checked } });
+      }
+    }
+
+    // 4. Update quote fields
+    await tx.quote.update({
+      where: { id },
+      data: {
+        companyId: data.companyId || null,
+        projectName: data.projectName || "",
+        address: data.address || "",
+        location: data.location || "",
+        buildingType: data.buildingType || "",
+        contactMethod: data.contactMethod || "Email",
+        contactDate: data.contactDate ? new Date(data.contactDate) : null,
+        followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
+        finalDate: data.finalDate ? new Date(data.finalDate) : null,
+        authorName: data.authorName || "",
+        notes: data.notes || "",
+      },
+    });
+  });
+
+  const quote = await prisma.quote.findUnique({
     where: { id },
-    data: {
-      companyId: data.companyId || null,
-      projectName: data.projectName || "",
-      address: data.address || "",
-      location: data.location || "",
-      buildingType: data.buildingType || "",
-      contactMethod: data.contactMethod || "Email",
-      contactDate: data.contactDate ? new Date(data.contactDate) : null,
-      followUpDate: data.followUpDate ? new Date(data.followUpDate) : null,
-      finalDate: data.finalDate ? new Date(data.finalDate) : null,
-      authorName: data.authorName || "",
-      notes: data.notes || "",
-      items: data.items ? {
-        create: data.items.map((item: Record<string, unknown>, i: number) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { id: _id, quoteId: _qid, ...rest } = item as Record<string, unknown>;
-          return { ...rest, sortOrder: i };
-        }),
-      } : undefined,
-    },
     include: {
       company: { include: { contacts: true } },
       items: { orderBy: { sortOrder: "asc" } },
@@ -71,15 +91,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       quoteContacts: { include: { person: true } },
     },
   });
-
-  if (data.checklistItems) {
-    for (const ci of data.checklistItems) {
-      await prisma.quoteChecklist.updateMany({
-        where: { id: ci.id },
-        data: { checked: ci.checked },
-      });
-    }
-  }
 
   return NextResponse.json(quote);
 }
