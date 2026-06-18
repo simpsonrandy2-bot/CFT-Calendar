@@ -162,34 +162,30 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 <div class="page">
 
   <!-- Header: logo left | date/quotation right -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:16px;border-bottom:3px solid ${ACCENT}">
-    <!-- Left: company logo + name -->
-    <div style="display:flex;align-items:flex-start;gap:12px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid ${ACCENT}">
+    <!-- Left: company logo (the logo image itself contains company name/tagline in production) -->
+    <div>
       ${logoData
-        ? `<img src="${logoData}" alt="Logo" style="max-height:80px;max-width:220px;object-fit:contain" />`
-        : `<div style="font-size:28pt;font-weight:900;color:${ACCENT};letter-spacing:-1px">CFT</div>`
+        ? `<img src="${logoData}" alt="Logo" style="max-height:100px;max-width:280px;object-fit:contain;display:block" />`
+        : `<div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:32pt;font-weight:900;color:${ACCENT};letter-spacing:-1px">CFT</div>
+            <div>
+              <div style="font-size:13pt;font-weight:800;color:${ACCENT}">${esc(coName)}</div>
+              ${coTagline ? `<div style="font-size:8pt;color:#555;text-transform:uppercase;letter-spacing:0.5px">${esc(coTagline)}</div>` : ""}
+              ${coPhone ? `<div style="font-size:7.5pt;color:#555;margin-top:2px">${esc(coPhone)}</div>` : ""}
+              ${coEmail ? `<div style="font-size:7.5pt;color:#555">${esc(coEmail)}</div>` : ""}
+            </div>
+          </div>`
       }
-      ${!logoData ? `<div>
-        <div style="font-size:12pt;font-weight:800;color:${ACCENT}">${esc(coName)}</div>
-        ${coTagline ? `<div style="font-size:8pt;color:#555;text-transform:uppercase;letter-spacing:0.5px">${esc(coTagline)}</div>` : ""}
-        ${coPhone ? `<div style="font-size:7.5pt;color:#555;margin-top:2px">${esc(coPhone)}</div>` : ""}
-        ${coEmail ? `<div style="font-size:7.5pt;color:#555">${esc(coEmail)}</div>` : ""}
-      </div>` : ""}
     </div>
-    <!-- Right: date/quote# + Quotation heading -->
-    <div style="text-align:right">
-      <table style="margin-left:auto;border-collapse:collapse;margin-bottom:8px">
-        <tr>
-          <td style="font-size:8pt;color:#555;padding-right:10px;white-space:nowrap">Date:</td>
-          <td style="font-size:8.5pt;font-weight:600;white-space:nowrap">${fmtDate(quote.createdAt)}</td>
-        </tr>
-        <tr>
-          <td style="font-size:8pt;color:#555;padding-right:10px;white-space:nowrap">Quote No:</td>
-          <td style="font-size:8.5pt;font-weight:600;white-space:nowrap">${esc(quote.quoteNumber)}</td>
-        </tr>
-      </table>
-      <div style="font-size:28pt;font-weight:300;color:#444;letter-spacing:-0.5px;border-bottom:2px solid ${ACCENT};padding-bottom:2px">Quotation</div>
-      ${quote.authorName ? `<div style="font-size:7.5pt;color:#888;margin-top:4px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
+    <!-- Right: date/quote# + large Quotation heading -->
+    <div style="text-align:right;min-width:200px">
+      <div style="margin-bottom:10px">
+        <span style="font-size:8.5pt;color:#555">Date&nbsp;&nbsp;</span><span style="font-size:9pt;font-weight:600">${fmtDate(quote.createdAt)}</span><br/>
+        <span style="font-size:8.5pt;color:#555">Quote No&nbsp;&nbsp;</span><span style="font-size:9pt;font-weight:600">${esc(quote.quoteNumber)}</span>
+      </div>
+      <div style="font-size:38pt;font-weight:300;color:#333;letter-spacing:-1px;line-height:1;border-bottom:2px solid ${ACCENT};padding-bottom:4px">Quotation</div>
+      ${quote.authorName ? `<div style="font-size:7.5pt;color:#888;margin-top:5px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
     </div>
   </div>
 
@@ -198,7 +194,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     <!-- Client -->
     <div>
-      ${clientLogo ? `<img src="${clientLogo}" alt="${esc(clientName)}" style="max-height:52px;max-width:140px;object-fit:contain;margin-bottom:8px;display:block" />` : ""}
+      ${clientLogo ? `<img src="${clientLogo}" alt="${esc(clientName)}" style="max-height:64px;max-width:160px;object-fit:contain;margin-bottom:8px;display:block" />` : ""}
       ${clientName ? `<div style="font-size:14pt;font-weight:800;text-transform:uppercase;color:#111;margin-bottom:4px">${esc(clientName)}</div>` : ""}
       ${clientAddress ? `<div style="font-size:9pt;color:#444;margin-bottom:2px">${esc(clientAddress)}</div>` : ""}
       ${clientPhone ? `<div style="font-size:9pt;color:#444">${esc(clientPhone)}</div>` : ""}
