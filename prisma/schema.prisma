@@ -151,6 +151,17 @@ model ChecklistTemplate {
   updatedAt DateTime               @updatedAt
 }
 
+model CompanySettings {
+  id          String   @id @default("singleton")
+  logoData    String?  @db.Text
+  companyName String   @default("Concrete Floor Tek Inc.")
+  tagline     String   @default("Self-Leveling Experts")
+  phone       String   @default("")
+  email       String   @default("")
+  website     String   @default("")
+  updatedAt   DateTime @updatedAt
+}
+
 model ChecklistTemplateItem {
   id         String            @id @default(cuid())
   templateId String

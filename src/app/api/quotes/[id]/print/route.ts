@@ -22,15 +22,24 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const quote = await prisma.quote.findUnique({
+  const [quote, companySettings] = await Promise.all([
+  prisma.quote.findUnique({
     where: { id },
     include: {
       company: { include: { contacts: true } },
       items: { orderBy: { sortOrder: "asc" } },
       checklistItems: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }] },
     },
-  });
+  }),
+  prisma.companySettings.findUnique({ where: { id: "singleton" } }),
+  ]);
   if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const coName = companySettings?.companyName || "Concrete Floor Tek Inc.";
+  const coTagline = companySettings?.tagline || "Self-Leveling Experts";
+  const coPhone = companySettings?.phone || "";
+  const coEmail = companySettings?.email || "";
+  const logoData = companySettings?.logoData || "";
 
   const totalCost = quote.items.reduce((s, i) => s + i.projectCost, 0);
   const primaryContact = quote.company?.contacts?.find(c => c.isPrimary) ?? quote.company?.contacts?.[0];
@@ -94,11 +103,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <div class="page">
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;border-bottom:2px solid #f97316;padding-bottom:16px">
-      <div>
-        <div style="font-size:22pt;font-weight:900;color:#f97316;letter-spacing:-0.5px">CFT</div>
-        <div style="font-size:8pt;color:#666;margin-top:2px">Concrete Floor Tek Inc.</div>
-        ${quote.authorName ? `<div style="margin-top:8px;font-size:9pt">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
+      <div style="display:flex;align-items:center;gap:12px">
+        ${logoData
+          ? `<img src="${logoData}" alt="Logo" style="max-height:60px;max-width:180px;object-fit:contain" />`
+          : `<div style="font-size:22pt;font-weight:900;color:#f97316;letter-spacing:-0.5px">CFT</div>`
+        }
+        <div>
+          <div style="font-size:10pt;font-weight:700;color:#111">${esc(coName)}</div>
+          ${coTagline ? `<div style="font-size:8pt;color:#666">${esc(coTagline)}</div>` : ""}
+          ${coPhone ? `<div style="font-size:8pt;color:#666;margin-top:2px">${esc(coPhone)}</div>` : ""}
+          ${coEmail ? `<div style="font-size:8pt;color:#666">${esc(coEmail)}</div>` : ""}
+        </div>
       </div>
+      ${quote.authorName ? `<div style="font-size:9pt;color:#6b7280;margin-top:4px">Prepared by: <strong>${esc(quote.authorName)}</strong></div>` : ""}
       <div style="text-align:right">
         <div style="font-size:8pt;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px">Quote</div>
         <div style="font-size:18pt;font-weight:700">${esc(quote.quoteNumber)}</div>
@@ -159,7 +176,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
     <!-- Footer -->
     <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:8pt;color:#9ca3af">
-      <span>Concrete Floor Tek Inc.</span>
+      <span>${esc(coName)}</span>
       <span>Quote ${esc(quote.quoteNumber)}</span>
       <span>${new Date().toLocaleDateString("en-CA")}</span>
     </div>
