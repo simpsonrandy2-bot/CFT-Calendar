@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CFT Job Scheduler",
-  description: "Concrete Floor Tech Job Scheduling App",
+  title: "CFT Dashboard",
+  description: "Concrete Floor Tek Business Management Platform",
 };
 
 export const viewport: Viewport = {
