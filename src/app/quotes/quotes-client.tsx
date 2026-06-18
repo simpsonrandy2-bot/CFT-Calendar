@@ -68,7 +68,7 @@ interface Quote {
 
 const JOB_TYPES = ["Precast", "Wood Frame", "Radiant Heat", "Wood Fr SM", "Leveling", "Other"];
 const PRODUCTS = ["None", "LR 2500", "LR 3500", "LR 4500", "LR3500 FR", "Maxxon Gyp-Crete High Performance", "Maxxon MF", "Maxxon Commercial Pro Level-Crete", "EXP Topping", "Quik-Top"];
-const THICKNESSES = ["3/4\"", "1\"", "1-1/4\"", "1-1/2\"", "1-3/4\"", "2\"", "2-1/2\"", "3\""];
+const THICKNESSES = ["1/4\"", "3/8\"", "1/2\"", "5/8\"", "3/4\"", "7/8\"", "1\"", "1-1/4\"", "1-1/2\"", "1-3/4\"", "2\"", "2-1/4\"", "2-1/2\"", "2-3/4\"", "3\""];
 const POURING_OPTIONS = ["Concrete", "Wood", "Steel", "Gypcrete"];
 const BUILDING_TYPES = ["Apartments", "Commercial", "Condo", "Custom Home", "Hospital", "Hotel", "House", "Industrial", "Institutional", "Residential", "Retail", "Retirement LTC", "Student Res"];
 const CONTACT_METHODS = ["Email", "Phone Call", "In Person", "Text"];
@@ -678,7 +678,10 @@ export function QuotesClient() {
                       </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">Product 1</label>
-                        <select disabled={readOnly} value={item.product1} onChange={e => updateItem(i, "product1", e.target.value)}
+                        <select disabled={readOnly} value={item.product1} onChange={e => {
+                            updateItem(i, "product1", e.target.value);
+                            updateItem(i, "estimateProduct1", e.target.value);
+                          }}
                           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none disabled:bg-gray-50">
                           {PRODUCTS.map(p => <option key={p}>{p}</option>)}
                         </select>
