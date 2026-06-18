@@ -73,17 +73,28 @@ model Company {
 }
 
 model Person {
-  id        String   @id @default(cuid())
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  name      String
-  cell      String   @default("")
-  office    String   @default("")
-  email     String   @default("")
-  position  String   @default("")
-  isPrimary Boolean  @default(false)
-  notes     String   @default("")
-  createdAt DateTime @default(now())
+  id            String         @id @default(cuid())
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name          String
+  cell          String         @default("")
+  office        String         @default("")
+  email         String         @default("")
+  position      String         @default("")
+  isPrimary     Boolean        @default(false)
+  notes         String         @default("")
+  createdAt     DateTime       @default(now())
+  quoteContacts QuoteContact[]
+}
+
+model QuoteContact {
+  id       String @id @default(cuid())
+  quoteId  String
+  quote    Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  personId String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([quoteId, personId])
 }
 
 model Quote {
@@ -106,6 +117,7 @@ model Quote {
   updatedAt      DateTime         @updatedAt
   items          QuoteItem[]
   checklistItems QuoteChecklist[]
+  quoteContacts  QuoteContact[]
 }
 
 model QuoteItem {

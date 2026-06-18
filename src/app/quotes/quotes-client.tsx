@@ -45,7 +45,7 @@ interface Company {
   postalCode?: string;
   phone?: string;
   email?: string;
-  contacts?: { id: string; name: string; email: string; cell: string; isPrimary: boolean }[];
+  contacts?: { id: string; name: string; email: string; cell: string; position: string; isPrimary: boolean }[];
 }
 
 interface Quote {
@@ -63,6 +63,7 @@ interface Quote {
   createdAt: string;
   items: QuoteItem[];
   checklistItems?: QuoteChecklist[];
+  quoteContacts?: { person: { id: string; name: string; email: string; cell: string; position: string } }[];
 }
 
 const JOB_TYPES = ["Precast", "Wood Frame", "Radiant Heat", "Wood Fr SM", "Leveling", "Other"];
@@ -119,6 +120,8 @@ export function QuotesClient() {
   const [newChecklistText, setNewChecklistText] = useState<Record<string, string>>({});
   const [companySearch, setCompanySearch] = useState("");
   const [companyOpen, setCompanyOpen] = useState(false);
+  const [selectedPersonIds, setSelectedPersonIds] = useState<Set<string>>(new Set());
+  const [contactPickerOpen, setContactPickerOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -161,6 +164,8 @@ export function QuotesClient() {
     setForm({ quoteNumber, items: [emptyItem()], status: "Draft" });
     setChecklistItems([]);
     setCompanySearch("");
+    setSelectedPersonIds(new Set());
+    setContactPickerOpen(false);
     setModal("new");
   }
 
@@ -171,6 +176,7 @@ export function QuotesClient() {
     setChecklistItems(full.checklistItems || []);
     const existing = companies.find(c => c.id === full.companyId);
     setCompanySearch(existing?.name || "");
+    setSelectedPersonIds(new Set((full.quoteContacts || []).map((qc: { person: { id: string } }) => qc.person.id)));
     setModal(full);
   }
 
@@ -179,7 +185,7 @@ export function QuotesClient() {
     const isNew = modal === "new";
     const url = isNew ? "/api/quotes" : `/api/quotes/${(modal as Quote).id}`;
     const method = isNew ? "POST" : "PUT";
-    const body = { ...form, checklistItems };
+    const body = { ...form, checklistItems, selectedPersonIds: Array.from(selectedPersonIds) };
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
       await fetchQuotes();
@@ -483,6 +489,7 @@ export function QuotesClient() {
                                 location: c.city || f.location,
                                 contactMethod: f.contactMethod || "Email",
                               }));
+                              if (primary) setSelectedPersonIds(new Set([primary.id]));
                               setCompanySearch(c.name);
                               setCompanyOpen(false);
                             }}
@@ -502,6 +509,78 @@ export function QuotesClient() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-gray-50" />
                 </div>
               </div>
+
+              {/* Contacts Section */}
+              {(() => {
+                const selectedCompany = companies.find(c => c.id === form.companyId);
+                const allContacts = selectedCompany?.contacts || [];
+                const selectedContacts = allContacts.filter(ct => selectedPersonIds.has(ct.id));
+                const unselectedContacts = allContacts.filter(ct => !selectedPersonIds.has(ct.id));
+                return (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-semibold text-gray-800">Contacts</span>
+                      {!readOnly && allContacts.length > 0 && (
+                        <button type="button" onClick={() => setContactPickerOpen(v => !v)}
+                          className="w-5 h-5 rounded-full bg-gray-800 text-white flex items-center justify-center hover:bg-orange-500 transition-colors">
+                          <Plus size={12} />
+                        </button>
+                      )}
+                      {!readOnly && form.companyId && allContacts.length === 0 && (
+                        <span className="text-xs text-gray-400">No contacts on file — add them in Contact Management</span>
+                      )}
+                    </div>
+
+                    {/* Picker dropdown */}
+                    {contactPickerOpen && unselectedContacts.length > 0 && (
+                      <div className="mb-2 border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                        {unselectedContacts.map(ct => (
+                          <div key={ct.id}
+                            onClick={() => {
+                              setSelectedPersonIds(prev => new Set([...prev, ct.id]));
+                              if (unselectedContacts.length === 1) setContactPickerOpen(false);
+                            }}
+                            className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-orange-50 border-b border-gray-100 last:border-0">
+                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
+                              {ct.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900">{ct.name}{ct.isPrimary && <span className="ml-1.5 text-xs text-orange-500">Primary</span>}</div>
+                              <div className="text-xs text-gray-400 truncate">{[ct.position, ct.email].filter(Boolean).join(" · ")}</div>
+                            </div>
+                            <Plus size={14} className="text-gray-400 flex-shrink-0" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Selected contacts */}
+                    {selectedContacts.length > 0 && (
+                      <div className="border border-gray-200 rounded-lg overflow-hidden">
+                        {selectedContacts.map((ct, i) => (
+                          <div key={ct.id} className={`flex items-center gap-2 px-3 py-2 text-sm ${i > 0 ? "border-t border-gray-100" : ""}`}>
+                            <span className="flex-1 font-medium text-gray-900 truncate">{ct.name}</span>
+                            <span className="flex-1 text-gray-500 truncate hidden sm:block">{ct.email}</span>
+                            <span className="w-32 text-gray-500 truncate hidden md:block">{ct.cell}</span>
+                            {ct.isPrimary && (
+                              <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0" title="Primary">
+                                <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 10 8"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                              </div>
+                            )}
+                            {!readOnly && (
+                              <button type="button"
+                                onClick={() => setSelectedPersonIds(prev => { const n = new Set(prev); n.delete(ct.id); return n; })}
+                                className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center hover:bg-red-200 flex-shrink-0">
+                                <X size={10} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Project Details */}
               <div className="grid grid-cols-2 gap-4">

@@ -12,6 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       company: { include: { contacts: true } },
       items: { orderBy: { sortOrder: "asc" } },
       checklistItems: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }] },
+      quoteContacts: { include: { person: true } },
     },
   });
   if (!quote) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -31,6 +32,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   await prisma.quoteItem.deleteMany({ where: { quoteId: id } });
+  if (data.selectedPersonIds !== undefined) {
+    await prisma.quoteContact.deleteMany({ where: { quoteId: id } });
+    if (data.selectedPersonIds.length > 0) {
+      await prisma.quoteContact.createMany({
+        data: (data.selectedPersonIds as string[]).map((personId: string) => ({ quoteId: id, personId })),
+        skipDuplicates: true,
+      });
+    }
+  }
 
   const quote = await prisma.quote.update({
     where: { id },
@@ -51,9 +61,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       } : undefined,
     },
     include: {
-      company: true,
+      company: { include: { contacts: true } },
       items: { orderBy: { sortOrder: "asc" } },
       checklistItems: { orderBy: [{ section: "asc" }, { sortOrder: "asc" }] },
+      quoteContacts: { include: { person: true } },
     },
   });
 

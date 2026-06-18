@@ -92,11 +92,15 @@ export async function POST(request: NextRequest) {
       checklistItems: {
         create: checklistItems,
       },
+      quoteContacts: data.selectedPersonIds?.length ? {
+        create: (data.selectedPersonIds as string[]).map((personId: string) => ({ personId })),
+      } : undefined,
     },
     include: {
-      company: true,
+      company: { include: { contacts: true } },
       items: true,
       checklistItems: true,
+      quoteContacts: { include: { person: true } },
     },
   });
 
