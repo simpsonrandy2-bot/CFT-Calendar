@@ -87,7 +87,11 @@ export async function POST(request: NextRequest) {
       status: "Draft",
       notes: data.notes || "",
       items: data.items ? {
-        create: data.items.map((item: Record<string, unknown>, i: number) => ({ ...item, sortOrder: i })),
+        create: data.items.map((item: Record<string, unknown>, i: number) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: _id, quoteId: _qid, ...rest } = item as Record<string, unknown>;
+          return { ...rest, sortOrder: i };
+        }),
       } : undefined,
       checklistItems: {
         create: checklistItems,

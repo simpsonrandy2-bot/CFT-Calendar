@@ -57,7 +57,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       authorName: data.authorName || "",
       notes: data.notes || "",
       items: data.items ? {
-        create: data.items.map((item: Record<string, unknown>, i: number) => ({ ...item, sortOrder: i, id: undefined })),
+        create: data.items.map((item: Record<string, unknown>, i: number) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id: _id, quoteId: _qid, ...rest } = item as Record<string, unknown>;
+          return { ...rest, sortOrder: i };
+        }),
       } : undefined,
     },
     include: {
