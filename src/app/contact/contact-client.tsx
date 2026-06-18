@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, Search, Edit2, Trash2, Users, Mail, X, Check, Upload } from "lucide-react";
 
 interface Person {
@@ -44,6 +45,8 @@ const emptyPerson = (): Partial<Person> => ({
 });
 
 export function ContactClient() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [tab, setTab] = useState<"Company" | "People">("Company");
   const [companies, setCompanies] = useState<Company[]>([]);
   const [people, setPeople] = useState<(Person & { companyName: string })[]>([]);
@@ -88,6 +91,23 @@ export function ContactClient() {
     if (tab === "Company") fetchCompanies();
     else fetchPeople();
   }, [tab, fetchCompanies, fetchPeople]);
+
+  // Auto-open company modal when arriving from ?company=ID link
+  useEffect(() => {
+    const companyId = searchParams.get("company");
+    if (!companyId || companies.length === 0) return;
+    const match = companies.find(c => c.id === companyId);
+    if (match) {
+      openEdit(match);
+      router.replace("/contact");
+    } else {
+      // Company may not be on current page — fetch directly
+      fetch(`/api/companies/${companyId}`).then(r => r.json()).then(c => {
+        if (c?.id) { openEdit(c); router.replace("/contact"); }
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companies, searchParams]);
 
   function openNew() {
     setForm(emptyCompany());

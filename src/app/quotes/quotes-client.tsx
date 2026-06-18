@@ -520,8 +520,12 @@ export function QuotesClient() {
                           <Plus size={12} />
                         </button>
                       )}
-                      {!readOnly && form.companyId && allContacts.length === 0 && (
-                        <span className="text-xs text-gray-400">No contacts on file — add them in Contact Management</span>
+                      {!readOnly && form.companyId && (
+                        <a href={`/contact?company=${form.companyId}`}
+                          className="text-xs text-orange-500 hover:text-orange-600 underline"
+                          onClick={() => setModal(null)}>
+                          + Add Contact
+                        </a>
                       )}
                     </div>
 
@@ -816,12 +820,7 @@ export function QuotesClient() {
                     {saving ? "Saving..." : "Save Draft"}
                   </button>
                 )}
-                {modal !== "new" && (modal as Quote).status === "Draft" && (
-                  <button onClick={() => { changeStatus((modal as Quote).id, "pending"); setModal(null); }}
-                    className="px-4 py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
-                    Send for Approval
-                  </button>
-                )}
+
                 {modal !== "new" && (modal as Quote).status === "Locked" && (
                   <button onClick={() => { changeStatus((modal as Quote).id, "finalize"); setModal(null); }}
                     className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">
