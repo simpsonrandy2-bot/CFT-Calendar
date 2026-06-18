@@ -68,9 +68,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   // ── item blocks ──────────────────────────────────────────────────────────
-  const TH = `background:${HDR};color:#fff;font-size:8pt;font-weight:600;text-transform:uppercase;padding:7px 10px;text-align:left;letter-spacing:0.3px`;
+  const TH = `background:${HDR};color:#fff;font-size:7pt;font-weight:600;text-transform:uppercase;padding:5px 8px;text-align:left;letter-spacing:0.4px`;
   const TH_R = `${TH};text-align:right`;
-  const TD = `background:${HDRLT};border:1px solid ${BORD};font-size:9.5pt;padding:7px 10px;vertical-align:middle`;
+  const TD = `background:${HDRLT};border:1px solid ${BORD};font-size:8.5pt;padding:5px 8px;vertical-align:middle`;
   const TD_R = `${TD};text-align:right;font-weight:700`;
 
   const itemBlocks = quote.items.map((item, i) => {
@@ -137,7 +137,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   <style>
     @page { margin: 0.75in; size: letter; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111; background: white; line-height: 1.4; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111; background: white; line-height: 1.4; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
     @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
     @media screen {
       body { background: #d1d5db; }
@@ -153,7 +153,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     <tr>
       <td style="vertical-align:bottom;padding-bottom:14px;width:52%">
         ${logoData
-          ? `<img src="${logoData}" alt="Logo" style="height:90px;width:auto;max-width:340px;object-fit:contain;display:block"/>`
+          ? `<img src="${logoData}" alt="Logo" style="max-height:80px;width:auto;max-width:300px;object-fit:contain;display:block;image-rendering:crisp-edges"/>`
           : `<table style="border-collapse:collapse"><tr>
                <td style="font-size:34pt;font-weight:900;color:#333;line-height:1;padding-right:10px">CFT</td>
                <td style="vertical-align:middle">
