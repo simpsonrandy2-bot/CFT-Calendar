@@ -285,7 +285,7 @@ export function QuotesClient() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 text-center">
           <div className="text-3xl font-bold text-gray-900">{pendingCount.toLocaleString()}</div>
           <div className="text-sm text-gray-500 mt-1">Pending Quotes</div>
@@ -455,7 +455,7 @@ export function QuotesClient() {
 
             <div className="p-6 space-y-6">
               {/* Company & Date */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Submitted To</label>
                   <input
@@ -585,7 +585,7 @@ export function QuotesClient() {
               })()}
 
               {/* Project Details */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
                   <input disabled={readOnly} value={form.projectName || ""} onChange={e => setForm(f => ({ ...f, projectName: e.target.value }))}
@@ -644,8 +644,8 @@ export function QuotesClient() {
                         )}
                       </div>
                     </div>
-                    <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                      <div className="col-span-2 sm:col-span-1">
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                      <div className="col-span-1">
                         <label className="block text-xs text-gray-500 mb-1">Job Type</label>
                         <select disabled={readOnly} value={item.jobType} onChange={e => updateItem(i, "jobType", e.target.value)}
                           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none disabled:bg-gray-50">
@@ -713,7 +713,7 @@ export function QuotesClient() {
                         <input disabled={readOnly} type="number" step="0.01" value={item.projectCost} onChange={e => updateItem(i, "projectCost", parseFloat(e.target.value) || 0)}
                           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none disabled:bg-gray-50" />
                       </div>
-                      <div className="col-span-2 sm:col-span-3 md:col-span-5">
+                      <div className="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-5">
                         <label className="block text-xs text-gray-500 mb-1">Notes</label>
                         <textarea disabled={readOnly} value={item.notes} onChange={e => updateItem(i, "notes", e.target.value)} rows={2}
                           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none disabled:bg-gray-50" />

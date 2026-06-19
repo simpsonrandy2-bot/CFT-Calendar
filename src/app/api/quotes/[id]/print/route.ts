@@ -133,6 +133,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Quote ${esc(quote.quoteNumber)} — ${esc(clientName || quote.projectName)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;300&display=swap" rel="stylesheet"/>
@@ -141,10 +142,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 9pt; color: #111; background: white; line-height: 1.4; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
     .quotation-heading { font-family: 'Raleway', Arial, sans-serif; font-weight: 200; font-size: 36pt; color: #333; letter-spacing: 1px; line-height: 1; border-bottom: 1.5px solid #555; padding-bottom: 6px; display: block; }
-    @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .save-btn { display: none; }
+    }
     @media screen {
       body { background: #d1d5db; }
       .page { max-width: 8.5in; margin: 0 auto; background: white; padding: 0.75in; box-shadow: 0 4px 32px rgba(0,0,0,0.2); min-height: 11in; }
+      .save-btn { display: block; text-align: center; padding: 14px; background: #f3f4f6; border-top: 1px solid #e5e7eb; }
+      .save-btn button { background: #484848; color: white; border: none; padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    }
+    @media screen and (max-width: 700px) {
+      .page { padding: 20px; min-height: unset; }
+      .quotation-heading { font-size: 24pt; }
     }
   </style>
 </head>
@@ -240,6 +250,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     <span>${new Date().toLocaleDateString("en-CA")}</span>
   </div>
 
+</div>
+<div class="save-btn">
+  <button onclick="window.print()">Save as PDF / Print</button>
 </div>
 </body>
 </html>`;
