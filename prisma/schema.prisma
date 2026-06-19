@@ -25,7 +25,8 @@ model Job {
   googleEventId String?  @unique
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  photos        Photo[]
+  photos            Photo[]
+  dailyAssignments  DailyAssignment[]
 }
 
 model Photo {
@@ -50,4 +51,28 @@ model CrewOff {
 model CrewMember {
   id   String @id @default(cuid())
   name String @unique
+}
+
+model DailyAssignment {
+  id          String   @id @default(cuid())
+  date        DateTime
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  crewMembers String   @default("[]")
+  truck       String   @default("")
+  notes       String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([date, jobId])
+}
+
+model WeekTask {
+  id         String   @id @default(cuid())
+  weekOf     String
+  title      String
+  color      String   @default("#94A3B8")
+  assignedTo String   @default("")
+  done       Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }

@@ -21,6 +21,11 @@ export function formatDateRange(start: Date | string, end: Date | string): strin
 }
 
 export const DEFAULT_CREW_MEMBERS = ["Dan", "Randy", "Jon", "Ken", "Cody", "Mike", "Tyler"];
+export const TRUCKS = [
+  "Pump 1", "Pump 2", "Pump 3", "Pump 4",
+  "Small Truck", "Med Truck", "Big Truck",
+  "Kenworth", "FSSO Sand",
+];
 export const DEFAULT_JOB_TYPES = [
   "Precast", "Wood Fr", "Leveling", "Radiant Heat", "Prep",
   "Prime/Survey", "Laying Mat", "Site Visit", "Pick Up"

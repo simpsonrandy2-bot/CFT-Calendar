@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Calendar, List, Users, LogOut, Plus, RefreshCw } from "lucide-react";
+import { Calendar, List, Users, LogOut, Plus, RefreshCw, LayoutDashboard } from "lucide-react";
 
 interface NavProps {
   role: "office" | "crew";
@@ -20,6 +20,7 @@ export function Nav({ role }: NavProps) {
   }
 
   const links = [
+    { href: "/schedule", label: "Schedule", icon: LayoutDashboard },
     { href: "/calendar", label: "Calendar", icon: Calendar },
     { href: "/jobs", label: "Jobs", icon: List },
     { href: "/crew-off", label: "Crew Off", icon: Users },
