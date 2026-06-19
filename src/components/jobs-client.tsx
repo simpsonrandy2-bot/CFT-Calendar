@@ -19,44 +19,34 @@ interface Job {
   photos: { id: string }[];
 }
 
-type Group = { label: string; jobs: Job[] };
+type Groups = { thisWeek: Job[]; nextMonth: Job[]; past: Job[] };
 
-function groupJobs(jobs: Job[]): Group[] {
+function groupJobs(jobs: Job[]): Groups {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const in7 = new Date(now); in7.setDate(now.getDate() + 7);
   const in30 = new Date(now); in30.setDate(now.getDate() + 30);
 
   const thisWeek: Job[] = [], nextMonth: Job[] = [], past: Job[] = [];
-
   for (const job of jobs) {
     const start = new Date(job.startDate);
     start.setHours(0, 0, 0, 0);
-    if (start < now) {
-      past.push(job);
-    } else if (start <= in7) {
-      thisWeek.push(job);
-    } else if (start <= in30) {
-      nextMonth.push(job);
-    }
+    if (start < now) past.push(job);
+    else if (start <= in7) thisWeek.push(job);
+    else if (start <= in30) nextMonth.push(job);
   }
-
-  const groups: Group[] = [];
-  if (thisWeek.length) groups.push({ label: "This Week", jobs: thisWeek });
-  if (nextMonth.length) groups.push({ label: "Next 30 Days", jobs: nextMonth });
-  if (past.length) groups.push({ label: "Past Jobs", jobs: past });
-  return groups;
+  return { thisWeek, nextMonth, past };
 }
 
 function JobCard({ job }: { job: Job }) {
   return (
     <Link
       href={`/jobs/${job.id}`}
-      className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-3 hover:border-gray-300 hover:shadow-sm transition-all"
+      className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-3 hover:border-gray-300 hover:shadow-sm transition-all"
     >
       <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: job.colorTag }} />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
+        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
           {job.jobType && (
             <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">{job.jobType}</span>
           )}
@@ -64,21 +54,29 @@ function JobCard({ job }: { job: Job }) {
             <span className="text-xs font-mono text-gray-400">#{job.jobNumber}</span>
           )}
         </div>
-        <p className="font-semibold text-gray-900 truncate text-sm">{job.title}</p>
+        <p className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">{job.title}</p>
         <p className="text-xs text-gray-500 mt-0.5">
           <DateDisplay start={job.startDate} end={job.endDate} />
           {job.jobLead && <span className="text-gray-400"> · {job.jobLead}</span>}
         </p>
       </div>
-      {job.photos?.length > 0 && (
-        <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-          <Camera size={12} /> {job.photos.length}
-        </span>
-      )}
-      <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {job.photos?.length > 0 && (
+          <span className="flex items-center gap-0.5 text-xs text-gray-400">
+            <Camera size={11} /> {job.photos.length}
+          </span>
+        )}
+        <ChevronRight size={14} className="text-gray-300" />
+      </div>
     </Link>
   );
 }
+
+const COLUMNS = [
+  { key: "thisWeek" as const, label: "This Week", icon: CalendarDays, color: "text-orange-500", border: "border-orange-400", bg: "bg-orange-50" },
+  { key: "nextMonth" as const, label: "Next 30 Days", icon: Clock, color: "text-blue-500", border: "border-blue-400", bg: "bg-blue-50" },
+  { key: "past" as const, label: "Past Jobs", icon: CheckCircle2, color: "text-gray-400", border: "border-gray-300", bg: "bg-gray-50" },
+];
 
 export function JobsClient() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -94,37 +92,35 @@ export function JobsClient() {
 
   const groups = groupJobs(jobs);
 
-  const ICONS: Record<string, React.ReactNode> = {
-    "This Week": <CalendarDays size={15} className="text-orange-500" />,
-    "Next 30 Days": <Clock size={15} className="text-blue-500" />,
-    "Past Jobs": <CheckCircle2 size={15} className="text-gray-400" />,
-  };
-
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Jobs</h1>
+    <div>
+      <h1 className="text-xl font-bold text-gray-900 mb-4">Jobs</h1>
 
-      {loading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-xl animate-pulse" />)}
-        </div>
-      ) : groups.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <CalendarDays size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No jobs in the next 30 days</p>
-        </div>
-      ) : groups.map(group => (
-        <div key={group.label}>
-          <div className="flex items-center gap-2 mb-2">
-            {ICONS[group.label]}
-            <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">{group.label}</h2>
-            <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{group.jobs.length}</span>
+      <div className="grid grid-cols-3 gap-4">
+        {COLUMNS.map(({ key, label, icon: Icon, color, border, bg }) => (
+          <div key={key} className="flex flex-col">
+            {/* Column header */}
+            <div className={`flex items-center gap-2 px-3 py-2.5 rounded-t-xl border-t-2 border-x border-b ${border} border-b-gray-200 ${bg} mb-0`}>
+              <Icon size={15} className={color} />
+              <span className="text-sm font-semibold text-gray-700">{label}</span>
+              <span className={`ml-auto text-xs font-medium px-1.5 py-0.5 rounded-full bg-white ${color}`}>
+                {loading ? "…" : groups[key].length}
+              </span>
+            </div>
+
+            {/* Job list */}
+            <div className="flex flex-col gap-2 pt-2">
+              {loading ? (
+                [1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-200 rounded-xl animate-pulse" />)
+              ) : groups[key].length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-xs">None</div>
+              ) : (
+                groups[key].map(job => <JobCard key={job.id} job={job} />)
+              )}
+            </div>
           </div>
-          <div className="space-y-2">
-            {group.jobs.map(job => <JobCard key={job.id} job={job} />)}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
