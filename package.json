@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack -H 0.0.0.0",
     "postinstall": "prisma generate",
-    "build": "DATABASE_URL=${neon_DATABASE_URL:-$DATABASE_URL} prisma db push && next build",
+    "build": "DATABASE_URL=${neon_DATABASE_URL:-$DATABASE_URL} prisma db push --accept-data-loss && next build",
     "start": "next start -H 0.0.0.0",
     "lint": "eslint"
   },
