@@ -17,7 +17,7 @@ async function getAccessToken(): Promise<string> {
     }),
   });
   const data = await res.json();
-  if (!data.access_token) throw new Error(data.error_description || data.error || JSON.stringify(data));
+  if (!data.access_token) throw new Error(`${data.error}: ${data.error_description} (token_prefix: ${String(process.env.GOOGLE_REFRESH_TOKEN || "").slice(0, 10)})`);
   return data.access_token;
 }
 

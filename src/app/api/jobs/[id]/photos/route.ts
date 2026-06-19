@@ -21,13 +21,15 @@ export async function POST(
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
   let url: string;
-  
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
+
+  try {
     const blob = await put(`jobs/${id}/${Date.now()}-${file.name}`, file, {
       access: "public",
     });
     url = blob.url;
-  } else {
+  } catch (blobErr) {
+    // Blob unavailable — fall back to base64 (smaller now due to client compression)
+    console.error("Blob upload failed:", blobErr);
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
     url = `data:${file.type};base64,${base64}`;

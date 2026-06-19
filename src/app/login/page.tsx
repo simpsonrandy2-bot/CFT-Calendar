@@ -23,7 +23,7 @@ async function loginAction(formData: FormData) {
   session.isLoggedIn = true;
   session.role = role as "office" | "crew";
   await session.save();
-  redirect("/calendar");
+  redirect(role === "office" ? "/quotes" : "/calendar");
 }
 
 export default async function LoginPage({
@@ -32,7 +32,7 @@ export default async function LoginPage({
   searchParams: Promise<{ role?: string; error?: string }>;
 }) {
   const session = await getSession();
-  if (session.isLoggedIn) redirect("/calendar");
+  if (session.isLoggedIn) redirect(session.role === "office" ? "/quotes" : "/calendar");
 
   const params = await searchParams;
   const selectedRole = params.role || "";
@@ -42,7 +42,7 @@ export default async function LoginPage({
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">CFT Job Scheduler</h1>
+          <h1 className="text-2xl font-bold text-gray-900">CFT Dashboard</h1>
           <p className="text-gray-500 mt-1">Concrete Floor Tech</p>
         </div>
 

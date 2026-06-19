@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   const jobLead = searchParams.get("jobLead") || "";
   const jobType = searchParams.get("jobType") || "";
   const startDate = searchParams.get("startDate");
+  const startDateEnd = searchParams.get("startDateEnd");
   const endDate = searchParams.get("endDate");
 
   const jobs = await prisma.job.findMany({
@@ -27,6 +28,7 @@ export async function GET(request: NextRequest) {
         jobLead ? { jobLead: { contains: jobLead } } : {},
         jobType ? { jobType: { contains: jobType } } : {},
         startDate ? { startDate: { gte: new Date(startDate) } } : {},
+        startDateEnd ? { startDate: { lte: new Date(startDateEnd) } } : {},
         endDate ? { endDate: { lte: new Date(endDate) } } : {},
       ],
     },
@@ -51,8 +53,8 @@ export async function POST(request: NextRequest) {
       address: data.address || "",
       jobLead: data.jobLead || "",
       siteContact: data.siteContact || "",
-      startDate: new Date(data.startDate),
-      endDate: new Date(data.endDate),
+      startDate: new Date(`${data.startDate}T12:00:00`),
+      endDate: new Date(`${data.endDate}T12:00:00`),
       startTime: data.startTime || null,
       description: data.description || "",
       colorTag: data.colorTag || "#3B82F6",

@@ -10,7 +10,7 @@ export default async function CalendarPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Nav role={session.role!} />
-      <main className="px-2 py-3">
+      <main className="px-2 py-1">
         <CalendarClient />
       </main>
     </div>

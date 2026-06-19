@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   format, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   addWeeks, subWeeks, addMonths, subMonths, eachDayOfInterval,
   isSameDay, isWithinInterval, parseISO, addDays, differenceInDays,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar, LayoutGrid } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, LayoutGrid, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { requestGoogleSync, getLastSyncTime } from "@/lib/google-sync";
 
 interface Job {
   id: string;
@@ -67,6 +68,14 @@ export function CalendarClient() {
   const [crewOffs, setCrewOffs] = useState<CrewOff[]>([]);
   const [loading, setLoading] = useState(true);
   const [weather, setWeather] = useState<Record<string, DayWeather>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  const [slideKey, setSlideKey] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isDragging = useRef(false);
+  const slideContainerRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async (start: Date, end: Date) => {
     setLoading(true);
@@ -114,7 +123,59 @@ export function CalendarClient() {
 
   useEffect(() => {
     setMounted(true);
+    // Need non-passive touchmove to call preventDefault and block page scroll during horizontal swipe
+    const el = slideContainerRef.current?.parentElement;
+    if (!el) return;
+    const onMove = (e: TouchEvent) => {
+      if (!isDragging.current) return;
+      e.preventDefault();
+    };
+    el.addEventListener("touchmove", onMove, { passive: false });
+    return () => el.removeEventListener("touchmove", onMove);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Load GIS script for auto-sync
+    if (!document.getElementById("gis-script")) {
+      const script = document.createElement("script");
+      script.id = "gis-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      document.body.appendChild(script);
+    }
+
+    const THIRTY_MINUTES = 30 * 60 * 1000;
+
+    function tryAutoSync() {
+      const lastSync = getLastSyncTime();
+      if (Date.now() - lastSync < THIRTY_MINUTES) return;
+      requestGoogleSync({
+        prompt: "",
+        onSuccess: () => {
+          // Refresh calendar data after silent sync
+          const start = viewMode === "week"
+            ? startOfWeek(currentDate, { weekStartsOn: 0 })
+            : viewMode === "day" ? currentDate : startOfMonth(currentDate);
+          const end = viewMode === "week"
+            ? endOfWeek(currentDate, { weekStartsOn: 0 })
+            : viewMode === "day" ? currentDate : endOfMonth(currentDate);
+          fetchData(start, end);
+        },
+      });
+    }
+
+    // Try once on mount (after a short delay so GIS can load)
+    const mountTimer = setTimeout(tryAutoSync, 3000);
+    // Then check every 30 minutes
+    const interval = setInterval(tryAutoSync, THIRTY_MINUTES);
+
+    return () => {
+      clearTimeout(mountTimer);
+      clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -133,7 +194,64 @@ export function CalendarClient() {
     fetchWeather(start, end);
   }, [currentDate, viewMode, fetchData, fetchWeather, mounted]);
 
+  useEffect(() => {
+    if (!searchQuery || allJobs.length > 0) return;
+    const start = new Date(Date.now() - 365 * 2 * 24 * 60 * 60 * 1000).toISOString();
+    const end = new Date(Date.now() + 365 * 2 * 24 * 60 * 60 * 1000).toISOString();
+    fetch(`/api/calendar?start=${start}&end=${end}`)
+      .then((r) => r.json())
+      .then((d) => setAllJobs(d.jobs || []));
+  }, [searchQuery, allJobs.length]);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const dx = e.touches[0].clientX - touchStartX.current;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    if (!isDragging.current) {
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, ignore
+      isDragging.current = true;
+    }
+    e.preventDefault();
+    const el = slideContainerRef.current;
+    if (!el) return;
+    // Rubber-band resistance at edges
+    const resistance = 0.4;
+    el.style.transition = "none";
+    el.style.transform = `translateX(${dx * resistance}px)`;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const el = slideContainerRef.current;
+    if (!isDragging.current || !el) return;
+    isDragging.current = false;
+
+    if (Math.abs(dx) > 60) {
+      const dir = dx < 0 ? "next" : "prev";
+      // Slide out
+      el.style.transition = "transform 0.18s ease-in";
+      el.style.transform = `translateX(${dx < 0 ? "-100%" : "100%"})`;
+      setTimeout(() => {
+        navigate(dir);
+        // navigate() updates slideKey which remounts the element with a CSS slide-in animation
+        if (el) { el.style.transition = "none"; el.style.transform = ""; }
+      }, 180);
+    } else {
+      // Spring back
+      el.style.transition = "transform 0.25s ease-out";
+      el.style.transform = "translateX(0)";
+    }
+  }
+
   function navigate(direction: "prev" | "next") {
+    setSlideDir(direction === "next" ? "left" : "right");
+    setSlideKey((k) => k + 1);
     if (viewMode === "week") {
       setCurrentDate(direction === "prev" ? subWeeks(currentDate, 1) : addWeeks(currentDate, 1));
     } else if (viewMode === "day") {
@@ -145,13 +263,13 @@ export function CalendarClient() {
 
   function getJobsForDay(day: Date): Job[] {
     return jobs.filter((job) => {
-      const start = parseISO(job.startDate);
-      const end = parseISO(job.endDate);
-      try {
-        return isWithinInterval(day, { start, end });
-      } catch {
-        return isSameDay(day, start);
-      }
+      const start = new Date(job.startDate);
+      const end = new Date(job.endDate);
+      // Compare date parts only to avoid UTC/local timezone shifts
+      const dayStr = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+      const startStr = `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
+      const endStr = `${end.getFullYear()}-${end.getMonth()}-${end.getDate()}`;
+      return dayStr >= startStr && dayStr <= endStr;
     });
   }
 
@@ -193,8 +311,12 @@ export function CalendarClient() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-3 px-1">
+    <div className="max-w-7xl mx-auto"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate("prev")}
@@ -248,21 +370,77 @@ export function CalendarClient() {
         )}
       </div>
 
-      {loading && (
+      <div className="relative mb-2 px-1">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search jobs..."
+          className="w-full pl-8 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {searchQuery && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-2">
+          {(() => {
+            const q = searchQuery.toLowerCase();
+            const results = allJobs.filter((j) =>
+              j.title.toLowerCase().includes(q) ||
+              j.customer?.toLowerCase().includes(q) ||
+              j.jobNumber?.toLowerCase().includes(q) ||
+              j.address?.toLowerCase().includes(q)
+            );
+            if (results.length === 0) return <div className="p-4 text-sm text-gray-400 text-center">No jobs found</div>;
+            return results.slice(0, 20).map((job) => (
+              <Link
+                key={job.id}
+                href={`/jobs/${job.id}`}
+                onClick={() => setSearchQuery("")}
+                className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: job.colorTag }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{job.title}</div>
+                  <div className="text-xs text-gray-400 truncate">{[job.jobNumber, job.address].filter(Boolean).join(" · ")}</div>
+                </div>
+                <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />
+              </Link>
+            ));
+          })()}
+        </div>
+      )}
+
+      {loading && !searchQuery && (
         <div className="text-center py-4 text-gray-400 text-sm animate-pulse">Loading...</div>
       )}
 
+      <style>{`
+        @keyframes slideInLeft { from { transform: translateX(60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideInRight { from { transform: translateX(-60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .slide-left { animation: slideInLeft 0.2s ease-out; }
+        .slide-right { animation: slideInRight 0.2s ease-out; }
+      `}</style>
+
+      <div ref={slideContainerRef}>
+
       {/* Week View */}
-      {viewMode === "week" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {!searchQuery && viewMode === "week" && (
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {weekDays.map((day) => {
               const w = getWeatherForDay(day);
               return (
                 <div
                   key={day.toISOString()}
+                  onClick={() => { setCurrentDate(day); setViewMode("day"); }}
                   className={cn(
-                    "px-1 py-2 text-center",
+                    "px-1 py-2 text-center cursor-pointer hover:bg-blue-50/50 transition-colors",
                     isSameDay(day, today) && "bg-blue-50"
                   )}
                 >
@@ -328,8 +506,8 @@ export function CalendarClient() {
       )}
 
       {/* Month View */}
-      {viewMode === "month" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {!searchQuery && viewMode === "month" && (
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}>
           <div className="grid grid-cols-7 border-b border-gray-200">
             {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
               <div key={d} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase">
@@ -393,8 +571,8 @@ export function CalendarClient() {
       )}
 
       {/* Day View */}
-      {viewMode === "day" && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {!searchQuery && viewMode === "day" && (
+        <div key={slideKey} className={`bg-white rounded-xl border border-gray-200 overflow-hidden ${slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : ""}`}>
           <div className="p-4 border-b border-gray-100">
             {(() => {
               const w = getWeatherForDay(currentDate);
@@ -440,6 +618,8 @@ export function CalendarClient() {
           </div>
         </div>
       )}
+
+      </div>{/* end slideContainerRef */}
     </div>
   );
 }

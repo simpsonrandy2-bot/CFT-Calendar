@@ -1,10 +1,12 @@
+export const dynamic = "force-dynamic";
+
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { AuthWrapper } from "@/components/auth-wrapper";
 import { PhotoGallery } from "@/components/photo-gallery";
-import { formatDateRange } from "@/lib/utils";
+import { DateDisplay } from "@/components/date-display";
 import { ExternalLink, Edit, MapPin, User, Phone, Clock } from "lucide-react";
 
 export default async function JobDetailPage({
@@ -24,9 +26,13 @@ export default async function JobDetailPage({
 
   const isOffice = session.role === "office";
 
+  const mapSrc = job.address
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(job.address)}&output=embed`
+    : null;
+
   return (
     <AuthWrapper>
-      <div className="max-w-2xl">
+      <div className="max-w-5xl">
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -52,11 +58,12 @@ export default async function JobDetailPage({
           />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 mb-4">
+        <div className={`grid gap-4 mb-4 ${mapSrc ? "lg:grid-cols-2" : ""}`}>
+        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
           <div className="px-4 py-3 flex items-start gap-3">
             <Clock size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="font-medium">{formatDateRange(job.startDate, job.endDate)}</span>
+              <span className="font-medium"><DateDisplay start={job.startDate.toISOString()} end={job.endDate.toISOString()} /></span>
               {job.startTime && <span className="text-gray-500 ml-2">@ {job.startTime}</span>}
             </div>
           </div>
@@ -69,6 +76,7 @@ export default async function JobDetailPage({
             >
               <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0 group-hover:text-green-600" />
               <span className="group-hover:text-green-700 group-hover:underline">{job.address}</span>
+              <ExternalLink size={13} className="text-gray-300 group-hover:text-green-500 ml-auto mt-0.5 flex-shrink-0" />
             </a>
           )}
           {job.jobLead && (
@@ -84,6 +92,21 @@ export default async function JobDetailPage({
             </div>
           )}
         </div>
+
+        {mapSrc && (
+          <div className="rounded-xl overflow-hidden border border-gray-200 min-h-48">
+            <iframe
+              src={mapSrc}
+              width="100%"
+              height="100%"
+              style={{ minHeight: "220px", border: 0, display: "block" }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        )}
+        </div>{/* end grid */}
 
         {job.description && (
           <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">

@@ -18,43 +18,85 @@ interface PhotoGalleryProps {
   canDelete?: boolean;
 }
 
+function compressImage(file: File, maxPx = 1280, quality = 0.75): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxPx || height > maxPx) {
+        if (width > height) { height = Math.round((height * maxPx) / width); width = maxPx; }
+        else { width = Math.round((width * maxPx) / height); height = maxPx; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Compression failed")), "image/jpeg", quality);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoGalleryProps) {
   const [photos, setPhotos] = useState(initialPhotos);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const [uploadError, setUploadError] = useState("");
   const [lightbox, setLightbox] = useState<Photo | null>(null);
   const [caption, setCaption] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("caption", caption);
+    setUploadingCount(files.length);
+    setUploadError("");
 
-    const res = await fetch(`/api/jobs/${jobId}/photos`, {
-      method: "POST",
-      body: formData,
-    });
+    for (const file of files) {
+      try {
+        let uploadFile: Blob;
+        let uploadName: string;
+        try {
+          uploadFile = await compressImage(file);
+          uploadName = file.name.replace(/\.[^.]+$/, ".jpg");
+        } catch (compErr) {
+          setUploadError(`Compress error: ${compErr instanceof Error ? compErr.message : String(compErr)}`);
+          uploadFile = file;
+          uploadName = file.name;
+        }
+        const formData = new FormData();
+        formData.append("file", uploadFile, uploadName);
+        formData.append("caption", caption);
 
-    if (res.ok) {
-      const photo = await res.json();
-      setPhotos((prev) => [photo, ...prev]);
-      setCaption("");
+        const res = await fetch(`/api/jobs/${jobId}/photos`, { method: "POST", body: formData });
+        const text = await res.text();
+        let data: Record<string, string> = {};
+        try { data = JSON.parse(text); } catch { setUploadError(`Server response (${res.status}): ${text.slice(0, 200)}`); continue; }
+        if (res.ok && data?.url) {
+          setPhotos((prev) => [{ ...data, uploadedAt: data.uploadedAt || new Date().toISOString(), uploadedBy: data.uploadedBy || "" } as Photo, ...prev]);
+        } else {
+          setUploadError(`Upload failed (${res.status}): ${data?.error || text.slice(0, 200)}`);
+        }
+      } catch (err) {
+        setUploadError(`Fetch error: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      setUploadingCount((n) => Math.max(0, n - 1));
     }
-    setUploading(false);
+
+    setCaption("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function handleDelete(photoId: string) {
     if (!confirm("Delete this photo?")) return;
     const res = await fetch(`/api/photos/${photoId}`, { method: "DELETE" });
-    if (res.ok) {
-      setPhotos((prev) => prev.filter((p) => p.id !== photoId));
-    }
+    if (res.ok) setPhotos((prev) => prev.filter((p) => p.id !== photoId));
   }
+
+  const uploading = uploadingCount > 0;
 
   return (
     <div>
@@ -63,7 +105,7 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
+          multiple
           onChange={handleUpload}
           className="hidden"
           id="photo-upload"
@@ -76,21 +118,24 @@ export function PhotoGallery({ photos: initialPhotos, jobId, canDelete }: PhotoG
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+        {uploadError && (
+          <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{uploadError}</div>
+        )}
         <label
           htmlFor="photo-upload"
           className={`flex items-center justify-center gap-2 w-full py-4 rounded-xl text-white font-semibold cursor-pointer transition-colors ${
-            uploading ? "bg-gray-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600 active:bg-orange-700"
+            uploading ? "bg-gray-400 cursor-not-allowed pointer-events-none" : "bg-orange-500 hover:bg-orange-600 active:bg-orange-700"
           }`}
         >
           {uploading ? (
             <>
               <Upload size={20} className="animate-bounce" />
-              Uploading...
+              Uploading {uploadingCount} photo{uploadingCount !== 1 ? "s" : ""}...
             </>
           ) : (
             <>
               <Camera size={20} />
-              Take Photo / Upload
+              Take / Select Photos
             </>
           )}
         </label>
