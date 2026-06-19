@@ -101,14 +101,10 @@ export function BoardClient() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Click on canvas background → create card at that spot
   function onCanvasClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target !== canvasRef.current) return; // only bare canvas
-    if (colorPickerId) { setColorPickerId(null); return; }
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const x = snap(e.clientX - rect.left);
-    const y = snap(e.clientY - rect.top);
-    createCard("", activeColor, x, y);
+    if (e.target !== canvasRef.current) return;
+    setColorPickerId(null);
+    setEditingId(null);
   }
 
   async function createCard(label: string, color: string, x: number, y: number) {
@@ -250,7 +246,7 @@ export function BoardClient() {
             backgroundImage: "radial-gradient(circle, #94a3b8 1px, transparent 1px)",
             backgroundSize: `${GRID}px ${GRID}px`,
             backgroundColor: "#f1f5f9",
-            cursor: "crosshair",
+            cursor: "default",
           }}
           onClick={onCanvasClick}
         >
@@ -261,8 +257,7 @@ export function BoardClient() {
           )}
           {!loading && cards.length === 0 && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 text-sm pointer-events-none">
-              <div className="text-lg">👆</div>
-              <div>Click anywhere to add a box — or use the quick-add buttons above</div>
+              <div>Use the crew, truck, and label buttons above to build your schedule</div>
             </div>
           )}
 
