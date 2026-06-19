@@ -210,7 +210,7 @@ export function QuotesClient() {
     if (!date) return;
     const totalCost = q.items.reduce((a, i) => a + i.projectCost, 0);
     const firstItem = q.items[0];
-    await fetch("/api/jobs", {
+    const res = await fetch("/api/jobs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -227,6 +227,10 @@ export function QuotesClient() {
         colorTag: "#f97316",
       }),
     });
+    if (!res.ok) {
+      alert("Failed to add to calendar. Please try again.");
+      return;
+    }
     setScheduled(prev => new Set(prev).add(q.id));
     setCalModal(null);
     setPourDate("");
@@ -328,8 +332,8 @@ export function QuotesClient() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
-                <th className="px-4 py-3 text-left w-20"></th>
-                <th className="px-4 py-3 text-left">Company</th>
+                <th className="px-2 py-3 text-left w-12 sm:w-20"></th>
+                <th className="px-2 py-3 text-left">Company</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Location</th>
                 <th className="px-4 py-3 text-left hidden lg:table-cell">Date</th>
                 <th className="px-4 py-3 text-left hidden lg:table-cell">Author</th>
@@ -350,17 +354,17 @@ export function QuotesClient() {
                 const firstItem = q.items[0];
                 return (
                   <tr key={q.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3">
                       {q.company?.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={q.company.logo} alt={q.company.name} className="w-16 h-16 rounded-lg object-contain bg-white border border-gray-100 p-0.5" />
+                        <img src={q.company.logo} alt={q.company.name} className="w-10 h-10 sm:w-16 sm:h-16 rounded-lg object-contain bg-white border border-gray-100 p-0.5" />
                       ) : (
-                        <div className="w-16 h-16 rounded-lg bg-orange-100 flex items-center justify-center text-base font-bold text-orange-600 border border-orange-200">
+                        <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-lg bg-orange-100 flex items-center justify-center text-sm sm:text-base font-bold text-orange-600 border border-orange-200">
                           {q.company?.name?.slice(0, 2).toUpperCase() || "??"}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3">
                       <div className="font-medium text-gray-900">{q.company?.name || "—"}</div>
                       <div className="text-xs text-gray-400">{q.quoteNumber}</div>
                     </td>
@@ -370,13 +374,13 @@ export function QuotesClient() {
                     <td className="px-4 py-3 text-gray-600 hidden xl:table-cell">{firstItem?.jobType}</td>
                     <td className="px-4 py-3 text-gray-600 hidden xl:table-cell">{firstItem?.squareFootage?.toLocaleString()}</td>
                     <td className="px-4 py-3 text-gray-600 hidden xl:table-cell">{firstItem?.product1}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[q.status] || "bg-gray-100 text-gray-600"}`}>{q.status}</span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
+                    <td className="px-2 py-3">
+                      <div className="flex items-center justify-end gap-0.5">
                         {totalCost > 0 && (
-                          <span className="px-2 py-0.5 bg-orange-500 text-white rounded text-xs font-medium">
+                          <span className="px-1.5 py-0.5 bg-orange-500 text-white rounded text-xs font-medium mr-1">
                             ${totalCost.toLocaleString()}
                           </span>
                         )}
@@ -390,35 +394,35 @@ export function QuotesClient() {
                           <FileText size={14} />
                         </button>
 
-                        {/* Thumbs up — always visible; green when Locked (click to un-approve), gray otherwise */}
+                        {/* Thumbs up — hidden on mobile */}
                         <button
                           title={q.status === "Locked" ? "Un-approve (back to Pending)" : "Approve & Lock"}
                           onClick={() => changeStatus(q.id, q.status === "Locked" ? "pending" : "approve")}
-                          className={`p-1.5 ${q.status === "Locked" ? "text-green-600 hover:text-yellow-500" : "text-gray-400 hover:text-green-600"}`}
+                          className={`hidden sm:inline-flex p-1.5 ${q.status === "Locked" ? "text-green-600 hover:text-yellow-500" : "text-gray-400 hover:text-green-600"}`}
                         >
                           <ThumbsUp size={14} />
                         </button>
 
-                        {/* Thumbs down — always visible; red when Lost */}
+                        {/* Thumbs down — hidden on mobile */}
                         <button
                           title="Reject"
                           onClick={() => changeStatus(q.id, q.status === "Lost" ? "draft" : "reject")}
-                          className={`p-1.5 ${q.status === "Lost" ? "text-red-500 hover:text-gray-400" : "text-gray-400 hover:text-red-500"}`}
+                          className={`hidden sm:inline-flex p-1.5 ${q.status === "Lost" ? "text-red-500 hover:text-gray-400" : "text-gray-400 hover:text-red-500"}`}
                         >
                           <ThumbsDown size={14} />
                         </button>
 
-                        {/* Calendar — always visible; active only when Locked */}
+                        {/* Calendar — hidden on mobile */}
                         <button
                           title={q.status === "Locked" ? scheduled.has(q.id) ? "Added to calendar" : "Schedule pour date" : "Approve quote first to schedule"}
                           onClick={() => { if (q.status === "Locked") { setCalModal(q); setPourDate(""); } }}
-                          className={`p-1.5 ${q.status === "Locked" ? scheduled.has(q.id) ? "text-green-500" : "text-blue-500 hover:text-blue-700" : "text-gray-300 cursor-default"}`}
+                          className={`hidden sm:inline-flex p-1.5 ${q.status === "Locked" ? scheduled.has(q.id) ? "text-green-500" : "text-blue-500 hover:text-blue-700" : "text-gray-300 cursor-default"}`}
                         >
                           <CalendarDays size={14} />
                         </button>
 
                         <button onClick={() => openEdit(q)} className="p-1.5 text-gray-400 hover:text-orange-500"><Edit2 size={14} /></button>
-                        <button onClick={() => deleteQuote(q.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                        <button onClick={() => deleteQuote(q.id)} className="hidden sm:inline-flex p-1.5 text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
