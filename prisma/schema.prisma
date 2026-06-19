@@ -8,25 +8,42 @@ datasource db {
 }
 
 model Job {
-  id            String   @id @default(cuid())
-  jobNumber     String   @default("")
+  id            String      @id @default(cuid())
+  jobNumber     String      @default("")
   title         String
-  customer      String   @default("")
-  jobType       String   @default("")
-  address       String   @default("")
-  jobLead       String   @default("")
-  siteContact   String   @default("")
+  customer      String      @default("")
+  jobType       String      @default("")
+  address       String      @default("")
+  jobLead       String      @default("")
+  siteContact   String      @default("")
   startDate     DateTime
   endDate       DateTime
   startTime     String?
-  description   String   @default("")
-  colorTag      String   @default("#3B82F6")
+  description   String      @default("")
+  colorTag      String      @default("#3B82F6")
   legacyJobUrl  String?
-  googleEventId String?  @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  googleEventId String?     @unique
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
   photos            Photo[]
   dailyAssignments  DailyAssignment[]
+  boardCards        BoardCard[]
+}
+
+model BoardCard {
+  id        String   @id @default(cuid())
+  date      String
+  jobId     String?
+  job       Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  label     String   @default("")
+  color     String   @default("#3B82F6")
+  x         Float    @default(0)
+  y         Float    @default(0)
+  width     Float    @default(200)
+  crew      String   @default("[]")
+  truck     String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Photo {

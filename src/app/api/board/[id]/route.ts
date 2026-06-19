@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth("office");
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const data = await request.json();
+
+  const card = await prisma.boardCard.update({
+    where: { id },
+    data: {
+      ...(data.x !== undefined && { x: data.x }),
+      ...(data.y !== undefined && { y: data.y }),
+      ...(data.width !== undefined && { width: data.width }),
+      ...(data.color !== undefined && { color: data.color }),
+      ...(data.label !== undefined && { label: data.label }),
+      ...(data.crew !== undefined && { crew: typeof data.crew === "string" ? data.crew : JSON.stringify(data.crew) }),
+      ...(data.truck !== undefined && { truck: data.truck }),
+    },
+    include: { job: true },
+  });
+
+  return NextResponse.json(card);
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await requireAuth("office");
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  await prisma.boardCard.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
