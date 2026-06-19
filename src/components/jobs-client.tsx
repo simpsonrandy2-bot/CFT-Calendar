@@ -23,7 +23,7 @@ type Group = { label: string; jobs: Job[] };
 
 function groupJobs(jobs: Job[]): Group[] {
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+  now.setHours(0, 0, 0, 0);
   const in7 = new Date(now); in7.setDate(now.getDate() + 7);
   const in30 = new Date(now); in30.setDate(now.getDate() + 30);
 
@@ -31,8 +31,8 @@ function groupJobs(jobs: Job[]): Group[] {
 
   for (const job of jobs) {
     const start = new Date(job.startDate);
-    const startStr = `${start.getFullYear()}-${start.getMonth()}-${start.getDate()}`;
-    if (startStr < todayStr) {
+    start.setHours(0, 0, 0, 0);
+    if (start < now) {
       past.push(job);
     } else if (start <= in7) {
       thisWeek.push(job);
@@ -87,7 +87,7 @@ export function JobsClient() {
   useEffect(() => {
     const start = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
     const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    fetch(`/api/jobs?startDate=${start}&endDate=${end}`)
+    fetch(`/api/jobs?startDate=${start}&startDateEnd=${end}`)
       .then((r) => r.json())
       .then((data) => { setJobs(Array.isArray(data) ? data : []); setLoading(false); });
   }, []);
