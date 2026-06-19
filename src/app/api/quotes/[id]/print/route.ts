@@ -243,6 +243,19 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     <div style="font-size:9pt;color:#374151;white-space:pre-wrap;line-height:1.5">${esc(quote.notes)}</div>
   </div>` : ""}
 
+  <!-- ACCEPTANCE -->
+  <div style="margin-top:24px;page-break-inside:avoid">
+    <div style="font-size:9.5pt;font-weight:700;color:#222;margin-bottom:6px">Acceptance of Proposal</div>
+    <p style="font-size:8.5pt;color:#333;margin-bottom:18px;line-height:1.5">The above Quotation, including all terms and conditions is satisfactory and hereby accepted.</p>
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <td style="width:45%;padding-top:6px;border-top:1.5px solid #333;font-size:8pt;color:#555">Signature</td>
+        <td style="width:10%"></td>
+        <td style="width:45%;padding-top:6px;border-top:1.5px solid #333;font-size:8pt;color:#555">Date</td>
+      </tr>
+    </table>
+  </div>
+
   <!-- FOOTER -->
   <div style="margin-top:28px;padding-top:8px;border-top:1px solid #ddd;display:flex;justify-content:space-between;font-size:7.5pt;color:#aaa">
     <span>${esc(coName)}</span>
