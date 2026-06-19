@@ -7,7 +7,7 @@ import {
   addWeeks, subWeeks, addMonths, subMonths, eachDayOfInterval,
   isSameDay, isWithinInterval, parseISO, addDays, differenceInDays,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar, LayoutGrid, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, LayoutGrid, Search, X, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { requestGoogleSync, getLastSyncTime } from "@/lib/google-sync";
 
@@ -70,6 +70,7 @@ export function CalendarClient() {
   const [weather, setWeather] = useState<Record<string, DayWeather>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const [syncing, setSyncing] = useState(false);
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
   const [slideKey, setSlideKey] = useState(0);
   const touchStartX = useRef(0);
@@ -249,6 +250,23 @@ export function CalendarClient() {
     }
   }
 
+  function handleSync() {
+    setSyncing(true);
+    requestGoogleSync({
+      onSuccess: () => {
+        const start = viewMode === "week"
+          ? startOfWeek(currentDate, { weekStartsOn: 0 })
+          : viewMode === "day" ? currentDate : startOfMonth(currentDate);
+        const end = viewMode === "week"
+          ? endOfWeek(currentDate, { weekStartsOn: 0 })
+          : viewMode === "day" ? currentDate : endOfMonth(currentDate);
+        fetchData(start, end);
+        setSyncing(false);
+      },
+      onError: () => setSyncing(false),
+    });
+  }
+
   function navigate(direction: "prev" | "next") {
     setSlideDir(direction === "next" ? "left" : "right");
     setSlideKey((k) => k + 1);
@@ -338,6 +356,16 @@ export function CalendarClient() {
           </button>
           <span className="ml-2 font-semibold text-gray-900 text-sm sm:text-base">{headerLabel}</span>
         </div>
+        <div className="flex items-center gap-2">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:border-gray-300 disabled:opacity-50 transition-colors"
+          title="Sync from Google Calendar"
+        >
+          <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+          <span className="hidden sm:inline">Sync</span>
+        </button>
         <div className="flex items-center bg-white rounded-lg border border-gray-200 p-0.5">
           <button
             onClick={() => setViewMode("week")}
@@ -359,6 +387,7 @@ export function CalendarClient() {
             <LayoutGrid size={14} />
             <span className="hidden sm:inline">Month</span>
           </button>
+        </div>
         </div>
         {viewMode === "day" && (
           <button
