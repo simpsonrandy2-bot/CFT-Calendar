@@ -281,12 +281,12 @@ export function CalendarClient() {
 
   function getJobsForDay(day: Date): Job[] {
     const pad = (n: number) => String(n).padStart(2, "0");
+    // Use local date for the calendar cell
     const dayStr = `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
     return jobs.filter((job) => {
-      const start = new Date(job.startDate);
-      const end = new Date(job.endDate);
-      const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
-      const endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
+      // Use UTC date from stored ISO string to avoid timezone shift
+      const startStr = new Date(job.startDate).toISOString().slice(0, 10);
+      const endStr = new Date(job.endDate).toISOString().slice(0, 10);
       return dayStr >= startStr && dayStr <= endStr;
     });
   }
